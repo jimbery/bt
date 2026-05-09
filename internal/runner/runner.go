@@ -26,11 +26,14 @@ type Runner struct {
 	baseURL string
 }
 
+// DefaultTimeout is used when runner.Config.Timeout is zero.
+const DefaultTimeout = 30 * time.Second
+
 // New returns a new Runner with the given config.
 func New(cfg Config) *Runner {
 	timeout := cfg.Timeout
 	if timeout == 0 {
-		timeout = 30 * time.Second
+		timeout = DefaultTimeout
 	}
 	return &Runner{
 		client:  &http.Client{Timeout: timeout},

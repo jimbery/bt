@@ -20,7 +20,7 @@ func newValidateCmd() *cobra.Command {
 				return err
 			}
 			if _, err := config.Load(path); err != nil {
-				return err
+				return fmt.Errorf("config: %w", err)
 			}
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "config is valid\n")
 			return nil

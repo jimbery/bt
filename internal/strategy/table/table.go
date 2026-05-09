@@ -166,7 +166,7 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 		if c.Expected != nil {
 			if c.Expected.StatusCode != 0 && resp.StatusCode != c.Expected.StatusCode {
 				failures = append(failures, model.Failure{
-					Invariant: "status_code",
+					Invariant: model.InvariantStatusCode,
 					Message:   fmt.Sprintf("expected status %d, got %d", c.Expected.StatusCode, resp.StatusCode),
 					Expected:  c.Expected.StatusCode,
 					Actual:    resp.StatusCode,
@@ -178,7 +178,7 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 				got := resp.Headers[key]
 				if got != want {
 					failures = append(failures, model.Failure{
-						Invariant: "response_header",
+						Invariant: model.InvariantResponseHeader,
 						Message:   fmt.Sprintf("header %q: expected %q, got %q", header, want, got),
 						Expected:  want,
 						Actual:    got,

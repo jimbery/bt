@@ -3,10 +3,6 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"net/http"
-	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,7 +10,6 @@ import (
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/replay"
 	"github.com/jayimbery/bt/internal/runner"
-	"github.com/jayimbery/bt/pkg/model"
 )
 
 func newReplayCmd() *cobra.Command {
@@ -42,7 +37,7 @@ func newReplayCmd() *cobra.Command {
 
 			cfg, err := config.Load(cfgPath)
 			if err != nil {
-				return fmt.Errorf("cannot load config: %w", err)
+				return fmt.Errorf("config: %w", err)
 			}
 
 			w := cmd.OutOrStdout()
@@ -61,7 +56,7 @@ func newReplayCmd() *cobra.Command {
 
 			r := runner.New(runner.Config{
 				BaseURL: cfg.Target.BaseURL,
-				Timeout: 30 * time.Second,
+				Timeout: runner.DefaultTimeout,
 			})
 
 			input := artifact.Request.AsCaseInput()
@@ -74,7 +69,7 @@ func newReplayCmd() *cobra.Command {
 
 			stillFailing := false
 			for _, f := range artifact.Failures {
-				if failureStillPresentAfterReplay(f, resp) {
+				if replay.FailureStillPresentAfterReplay(f, resp) {
 					stillFailing = true
 					break
 				}
@@ -88,71 +83,5 @@ func newReplayCmd() *cobra.Command {
 			_, _ = fmt.Fprintf(w, "Result: PASS — failure no longer reproducible\n")
 			return nil
 		},
-	}
-}
-
-var headerFailureNameRE = regexp.MustCompile(`header "([^"]+)"`)
-
-func failureStillPresentAfterReplay(f model.Failure, resp model.ResponseDetail) bool {
-	switch f.Invariant {
-	case "status_code":
-		want, ok := expectedAsInt(f.Expected)
-		if !ok {
-			return false
-		}
-		return resp.StatusCode != want
-	case "response_header":
-		name, ok := headerNameFromFailureMessage(f.Message)
-		if !ok {
-			return false
-		}
-		want, ok := expectedAsString(f.Expected)
-		if !ok {
-			return false
-		}
-		key := http.CanonicalHeaderKey(name)
-		got := resp.Headers[key]
-		return got != want
-	default:
-		return false
-	}
-}
-
-func headerNameFromFailureMessage(msg string) (string, bool) {
-	m := headerFailureNameRE.FindStringSubmatch(msg)
-	if len(m) < 2 {
-		return "", false
-	}
-	return m[1], true
-}
-
-func expectedAsInt(v any) (int, bool) {
-	switch x := v.(type) {
-	case float64:
-		return int(x), true
-	case int:
-		return x, true
-	case int64:
-		return int(x), true
-	case string:
-		i, err := strconv.Atoi(strings.TrimSpace(x))
-		return i, err == nil
-	default:
-		return 0, false
-	}
-}
-
-func expectedAsString(v any) (string, bool) {
-	switch x := v.(type) {
-	case string:
-		return x, true
-	case float64:
-		return strconv.FormatInt(int64(x), 10), true
-	case int:
-		return strconv.Itoa(x), true
-	case int64:
-		return strconv.FormatInt(x, 10), true
-	default:
-		return "", false
 	}
 }

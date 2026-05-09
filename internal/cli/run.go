@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 	"path/filepath"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -41,49 +40,22 @@ func newRunCmd() *cobra.Command {
 
 			cfg, err := config.Load(cfgPath)
 			if err != nil {
-				return err
+				return fmt.Errorf("config: %w", err)
 			}
 
 			ad := openapi.New()
-			ops, err := ad.Discover(cmd.Context(), cfg.Target.AsModel())
+			target := cfg.Target.AsModel()
+			if err := ad.Validate(cmd.Context(), target); err != nil {
+				return fmt.Errorf("adapter validate: %w", err)
+			}
+			ops, err := ad.Discover(cmd.Context(), target)
 			if err != nil {
 				return fmt.Errorf("adapter: %w", err)
 			}
 
-			var st strategy.Strategy
-			switch strategy.Kind(strategyName) {
-			case strategy.KindTable:
-				artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
-				st = table.NewWithOptions(table.Options{
-					ArtifactWriter: replay.NewWriter(artifactDir),
-					Environment:    cfg.Target.Environment,
-				})
-			default:
-				return fmt.Errorf("unknown strategy: %q", strategyName)
-			}
-
-			spec := strategy.Spec{Kind: strategy.Kind(strategyName)}
-			var found bool
-			for _, sc := range cfg.Strategies {
-				if sc.Type != strategyName {
-					continue
-				}
-				found = true
-				if sc.Config != nil {
-					spec.Config = make(map[string]any, len(sc.Config)+1)
-					for k, v := range sc.Config {
-						spec.Config[k] = v
-					}
-				} else {
-					spec.Config = map[string]any{}
-				}
-				if sc.File != "" {
-					spec.Config["file"] = sc.File
-				}
-				break
-			}
-			if !found {
-				return fmt.Errorf("no strategy of type %q found in config", strategyName)
+			st, spec, err := buildStrategyAndSpec(cfgPath, strategyName, cfg)
+			if err != nil {
+				return err
 			}
 
 			cases, err := st.Plan(cmd.Context(), spec, ops)
@@ -93,7 +65,7 @@ func newRunCmd() *cobra.Command {
 
 			exec := runner.New(runner.Config{
 				BaseURL: cfg.Target.BaseURL,
-				Timeout: 30 * time.Second,
+				Timeout: runner.DefaultTimeout,
 			})
 
 			results, err := st.Execute(cmd.Context(), cases, exec)
@@ -126,4 +98,43 @@ func newRunCmd() *cobra.Command {
 	}
 
 	return cmd
+}
+
+func buildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config) (strategy.Strategy, strategy.Spec, error) {
+	var st strategy.Strategy
+	switch strategy.Kind(strategyName) {
+	case strategy.KindTable:
+		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
+		st = table.NewWithOptions(table.Options{
+			ArtifactWriter: replay.NewWriter(artifactDir),
+			Environment:    cfg.Target.Environment,
+		})
+	default:
+		return nil, strategy.Spec{}, fmt.Errorf("unknown strategy: %q", strategyName)
+	}
+
+	spec := strategy.Spec{Kind: strategy.Kind(strategyName)}
+	var found bool
+	for _, sc := range cfg.Strategies {
+		if sc.Type != strategyName {
+			continue
+		}
+		found = true
+		if sc.Config != nil {
+			spec.Config = make(map[string]any, len(sc.Config)+1)
+			for k, v := range sc.Config {
+				spec.Config[k] = v
+			}
+		} else {
+			spec.Config = map[string]any{}
+		}
+		if sc.File != "" {
+			spec.Config["file"] = sc.File
+		}
+		break
+	}
+	if !found {
+		return nil, strategy.Spec{}, fmt.Errorf("no strategy of type %q found in config", strategyName)
+	}
+	return st, spec, nil
 }

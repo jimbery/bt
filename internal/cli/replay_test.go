@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,7 +36,7 @@ func writeTestArtifact(t *testing.T, dir string, statusCode int) string {
 		},
 		Failures: []model.Failure{
 			{
-				Invariant: "status_code",
+				Invariant: model.InvariantStatusCode,
 				Message:   "expected 201, got 500",
 				Expected:  201,
 				Actual:    statusCode,
@@ -100,7 +101,7 @@ func TestReplayCommand_FailureStillPresent(t *testing.T) {
 	_ = cmd.Execute()
 
 	output := out.String()
-	if !containsString(output, "still present") && !containsString(output, "FAIL") {
+	if !strings.Contains(output, "still present") && !strings.Contains(output, "FAIL") {
 		t.Errorf("expected output to indicate failure is still present, got:\n%s", output)
 	}
 }
@@ -126,7 +127,7 @@ func TestReplayCommand_FailureNoLongerReproducible(t *testing.T) {
 	}
 
 	output := out.String()
-	if !containsString(output, "no longer") && !containsString(output, "PASS") {
+	if !strings.Contains(output, "no longer") && !strings.Contains(output, "PASS") {
 		t.Errorf("expected output to indicate failure is no longer reproducible, got:\n%s", output)
 	}
 }
@@ -152,7 +153,7 @@ func TestReplayCommand_ResponseHeaderFailureStillPresent(t *testing.T) {
 		Response: model.ResponseDetail{StatusCode: http.StatusOK},
 		Failures: []model.Failure{
 			{
-				Invariant: "response_header",
+				Invariant: model.InvariantResponseHeader,
 				Message:   `header "X-Request-ID": expected "should-not-be-present", got ""`,
 				Expected:  "should-not-be-present",
 				Actual:    "",
@@ -174,7 +175,7 @@ func TestReplayCommand_ResponseHeaderFailureStillPresent(t *testing.T) {
 	cmd.SetArgs([]string{"replay", "--config", cfgPath, artifactPath})
 	cmd.SetOut(&out)
 	_ = cmd.Execute()
-	if !containsString(out.String(), "still present") && !containsString(out.String(), "FAIL") {
+	if !strings.Contains(out.String(), "still present") && !strings.Contains(out.String(), "FAIL") {
 		t.Errorf("expected header mismatch to still fail replay, got:\n%s", out.String())
 	}
 }
@@ -198,7 +199,7 @@ func TestReplayCommand_ResponseHeaderFailureResolved(t *testing.T) {
 		Response:     model.ResponseDetail{StatusCode: http.StatusOK},
 		Failures: []model.Failure{
 			{
-				Invariant: "response_header",
+				Invariant: model.InvariantResponseHeader,
 				Message:   `header "X-Request-ID": expected "should-not-be-present", got ""`,
 				Expected:  "should-not-be-present",
 				Actual:    "",
@@ -222,19 +223,7 @@ func TestReplayCommand_ResponseHeaderFailureResolved(t *testing.T) {
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected replay to pass when header now matches, got: %v", err)
 	}
-	if !containsString(out.String(), "PASS") || !containsString(out.String(), "no longer") {
+	if !strings.Contains(out.String(), "PASS") || !strings.Contains(out.String(), "no longer") {
 		t.Errorf("expected pass output, got:\n%s", out.String())
 	}
-}
-
-func containsString(s, substr string) bool {
-	if len(s) < len(substr) {
-		return false
-	}
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }
