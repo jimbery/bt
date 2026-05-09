@@ -22,8 +22,47 @@ jobs:
         with:
           version: v2.7.2
 
-      - name: Test
+      - name: Unit tests
         run: go test ./... -race -coverprofile=coverage.out
 
-      - name: Build
-        run: go build ./cmd/bt
+      - name: Build bt
+        run: go build -o bt ./cmd/bt
+
+      - name: Build orders-api
+        run: go build -o orders-api ./examples/orders-api
+
+      - name: Start orders-api
+        run: ./orders-api &
+        env:
+          PORT: "8080"
+
+      - name: Wait for orders-api
+        run: |
+          for i in $(seq 1 10); do
+            if curl -sf http://localhost:8080/health; then
+              exit 0
+            fi
+            echo "waiting for orders-api... ($i)"
+            sleep 1
+          done
+          echo "orders-api did not become ready"
+          exit 1
+
+      - name: Ensure bt report directory
+        run: mkdir -p examples/orders-api/bt/.bt/reports
+
+      - name: Run bt integration tests
+        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
+
+      - name: Run bt integration tests (JSON output)
+        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --output json
+
+      - name: Run bt integration tests (JUnit to artifact)
+        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --output junit > examples/orders-api/bt/.bt/reports/results.xml
+
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: examples/orders-api/bt/.bt/reports/

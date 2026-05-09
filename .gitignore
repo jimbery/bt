@@ -1,5 +1,6 @@
 # Build output (root binary only; do not match cmd/bt/)
 /bt
+/orders-api
 dist/
 
 # Runtime artifacts
