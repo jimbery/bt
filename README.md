@@ -165,6 +165,8 @@ Or run the bundled script (from repo root, API already up):
 
 ## Development
 
+For **code changes** (Go, CI, or executable scripts), branch from **`main`**, push that branch, and merge via PR. **Documentation-only** changes (README, milestones, ADRs) may go straight on `main` when small; use a branch if the edit is large or you want review on its own.
+
 Before you commit, run the same checks as CI (formatters plus linters):
 
 ```bash
