@@ -2,12 +2,14 @@ package cli
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jayimbery/bt/internal/adapter/openapi"
 	"github.com/jayimbery/bt/internal/config"
+	"github.com/jayimbery/bt/internal/replay"
 	"github.com/jayimbery/bt/internal/report"
 	"github.com/jayimbery/bt/internal/runner"
 	"github.com/jayimbery/bt/internal/strategy"
@@ -51,7 +53,11 @@ func newRunCmd() *cobra.Command {
 			var st strategy.Strategy
 			switch strategy.Kind(strategyName) {
 			case strategy.KindTable:
-				st = table.New()
+				artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
+				st = table.NewWithOptions(table.Options{
+					ArtifactWriter: replay.NewWriter(artifactDir),
+					Environment:    cfg.Target.Environment,
+				})
 			default:
 				return fmt.Errorf("unknown strategy: %q", strategyName)
 			}

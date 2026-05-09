@@ -2,6 +2,7 @@ package table
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,6 +14,38 @@ import (
 	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/pkg/model"
 )
+
+// ArtifactWriter is the interface the table strategy uses to write failure artifacts.
+// replay.Writer satisfies this interface.
+type ArtifactWriter interface {
+	Write(a model.Artifact) (string, error)
+}
+
+// Options configures optional behaviour for the table strategy.
+type Options struct {
+	// ArtifactWriter is called on each failing case to write a replay bundle.
+	// If nil, no artifacts are written.
+	ArtifactWriter ArtifactWriter
+
+	// Environment is recorded in artifact bundles for context.
+	Environment string
+}
+
+type tableStrategy struct {
+	opts Options
+}
+
+// New returns a table Strategy with default options (no artifact writing).
+func New() strategy.Strategy {
+	return &tableStrategy{}
+}
+
+// NewWithOptions returns a table Strategy with the given options.
+func NewWithOptions(opts Options) strategy.Strategy {
+	return &tableStrategy{opts: opts}
+}
+
+func (s *tableStrategy) Name() strategy.Kind { return strategy.KindTable }
 
 // caseFile is the on-disk format for a table test case file.
 type caseFile struct {
@@ -39,19 +72,9 @@ type caseExpectedEntry struct {
 	Headers    map[string]string `yaml:"headers"`
 }
 
-// Strategy implements strategy.Strategy for table-driven testing.
-type Strategy struct{}
-
-// New returns a new table Strategy.
-func New() strategy.Strategy {
-	return &Strategy{}
-}
-
-func (s *Strategy) Name() strategy.Kind { return strategy.KindTable }
-
 // Plan loads cases from the YAML file specified in spec.Config["file"].
 // It does not make network calls.
-func (s *Strategy) Plan(_ context.Context, spec strategy.Spec, _ []model.Operation) ([]model.Case, error) {
+func (s *tableStrategy) Plan(_ context.Context, spec strategy.Spec, _ []model.Operation) ([]model.Case, error) {
 	filePath, ok := spec.Config["file"].(string)
 	if !ok || filePath == "" {
 		return nil, errors.New("table strategy requires config.file to be set")
@@ -92,8 +115,34 @@ func (s *Strategy) Plan(_ context.Context, spec strategy.Spec, _ []model.Operati
 	return cases, nil
 }
 
+func cloneStringMap(m map[string]string) map[string]string {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]string, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
+	return out
+}
+
+func requestDetailFromCase(c model.Case) model.RequestDetail {
+	rd := model.RequestDetail{
+		Method:  c.Input.Method,
+		URL:     c.Input.Path,
+		Headers: cloneStringMap(c.Input.Headers),
+		Query:   cloneStringMap(c.Input.Query),
+	}
+	if c.Input.Body != nil {
+		if b, err := json.Marshal(c.Input.Body); err == nil {
+			rd.Body = b
+		}
+	}
+	return rd
+}
+
 // Execute runs each case through the executor and evaluates assertions.
-func (s *Strategy) Execute(ctx context.Context, cases []model.Case, exec strategy.Executor) ([]model.Result, error) {
+func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec strategy.Executor) ([]model.Result, error) {
 	results := make([]model.Result, 0, len(cases))
 
 	for _, c := range cases {
@@ -109,11 +158,7 @@ func (s *Strategy) Execute(ctx context.Context, cases []model.Case, exec strateg
 			StatusCode: resp.StatusCode,
 			Duration:   dur,
 			Response:   resp,
-			Request: model.RequestDetail{
-				Method:  c.Input.Method,
-				URL:     "",
-				Headers: c.Input.Headers,
-			},
+			Request:    requestDetailFromCase(c),
 		}
 
 		var failures []model.Failure
@@ -144,6 +189,26 @@ func (s *Strategy) Execute(ctx context.Context, cases []model.Case, exec strateg
 
 		result.Failures = failures
 		result.Passed = len(failures) == 0
+
+		if !result.Passed && s.opts.ArtifactWriter != nil {
+			artifact := model.Artifact{
+				ID:           fmt.Sprintf("%s-%d", c.ID, time.Now().UnixNano()),
+				StrategyKind: string(strategy.KindTable),
+				CaseID:       c.ID,
+				OccurredAt:   time.Now().UTC(),
+				Environment:  s.opts.Environment,
+				Request:      result.Request,
+				Response:     resp,
+				Failures:     failures,
+			}
+			artifactPath, writeErr := s.opts.ArtifactWriter.Write(artifact)
+			if writeErr != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "warning: could not write artifact for case %q: %v\n", c.ID, writeErr)
+			} else {
+				result.ArtifactPath = artifactPath
+			}
+		}
+
 		results = append(results, result)
 	}
 
