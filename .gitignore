@@ -1,5 +1,5 @@
-# Build output
-bt
+# Build output (root binary only; do not match cmd/bt/)
+/bt
 dist/
 
 # Runtime artifacts
