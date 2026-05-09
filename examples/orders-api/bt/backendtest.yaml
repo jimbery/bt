@@ -1,0 +1,21 @@
+# Paths are relative to the process working directory (repo root when running:
+#   ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
+# from the repository root, matching CI.)
+version: 1
+
+target:
+  name: orders-api
+  base_url: http://localhost:8080
+  schema: examples/orders-api/openapi.yaml
+
+strategies:
+  - type: table
+    file: examples/orders-api/bt/tests/table.yaml
+
+report:
+  formats: [console, json, junit]
+  output_dir: examples/orders-api/bt/.bt/reports
+
+safety:
+  profile: safe
+  deny_methods: []

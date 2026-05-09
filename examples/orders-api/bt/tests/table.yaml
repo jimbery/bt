@@ -1,0 +1,104 @@
+cases:
+  # Health check
+  - id: health-returns-200
+    operation_id: GetHealth
+    input:
+      method: GET
+      path: /health
+    expected:
+      status_code: 200
+
+  # List orders — empty store returns 200 with empty array
+  - id: list-orders-empty
+    operation_id: ListOrders
+    input:
+      method: GET
+      path: /orders
+    expected:
+      status_code: 200
+
+  # List orders — valid status filter
+  - id: list-orders-filter-pending
+    operation_id: ListOrders
+    input:
+      method: GET
+      path: /orders
+      query:
+        status: pending
+    expected:
+      status_code: 200
+
+  # List orders — invalid status filter returns 400
+  - id: list-orders-filter-invalid
+    operation_id: ListOrders
+    input:
+      method: GET
+      path: /orders
+      query:
+        status: not_a_real_status
+    expected:
+      status_code: 400
+
+  # Create order — valid request returns 201
+  - id: create-order-valid
+    operation_id: CreateOrder
+    input:
+      method: POST
+      path: /orders
+      headers:
+        Content-Type: application/json
+      body:
+        amount: 100
+        currency: GBP
+        description: Integration test order
+    expected:
+      status_code: 201
+
+  # Create order — missing amount returns 400
+  - id: create-order-missing-amount
+    operation_id: CreateOrder
+    input:
+      method: POST
+      path: /orders
+      headers:
+        Content-Type: application/json
+      body:
+        currency: GBP
+    expected:
+      status_code: 400
+
+  # Create order — missing currency returns 400
+  - id: create-order-missing-currency
+    operation_id: CreateOrder
+    input:
+      method: POST
+      path: /orders
+      headers:
+        Content-Type: application/json
+      body:
+        amount: 100
+    expected:
+      status_code: 400
+
+  # Create order — negative amount returns 400
+  - id: create-order-negative-amount
+    operation_id: CreateOrder
+    input:
+      method: POST
+      path: /orders
+      headers:
+        Content-Type: application/json
+      body:
+        amount: -1
+        currency: GBP
+    expected:
+      status_code: 400
+
+  # Get order — non-existent ID returns 404
+  - id: get-order-not-found
+    operation_id: GetOrder
+    input:
+      method: GET
+      path: /orders/does-not-exist
+    expected:
+      status_code: 404
