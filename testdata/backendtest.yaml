@@ -1,0 +1,10 @@
+# bt config — run from repo root: ./bt run --config testdata/backendtest.yaml --strategy table
+# (testdata/test-yaml.yml is OpenAPI only; it is not a bt config file.)
+version: 1
+target:
+  name: httpbin-smoke
+  base_url: https://httpbin.org
+  schema: testdata/minimal-openapi.yaml
+strategies:
+  - type: table
+    file: testdata/cases.yaml

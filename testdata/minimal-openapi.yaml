@@ -1,0 +1,11 @@
+openapi: "3.0.3"
+info:
+  title: Smoke API
+  version: "1.0.0"
+paths:
+  /status/200:
+    get:
+      operationId: GetStatus200
+      responses:
+        "200":
+          description: OK
