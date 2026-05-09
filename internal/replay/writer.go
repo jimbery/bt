@@ -53,7 +53,7 @@ func (w *Writer) Write(a model.Artifact) (string, error) {
 
 	abs, err := filepath.Abs(path)
 	if err != nil {
-		return path, nil
+		return path, fmt.Errorf("cannot resolve absolute artifact path: %w", err)
 	}
 	return abs, nil
 }

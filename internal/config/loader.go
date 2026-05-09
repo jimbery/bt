@@ -21,11 +21,11 @@ type Config struct {
 }
 
 type TargetConfig struct {
-	Name         string     `mapstructure:"name"`
-	BaseURL      string     `mapstructure:"base_url"`
-	SchemaPath   string     `mapstructure:"schema"`
-	Environment  string     `mapstructure:"environment"`
-	Auth         AuthConfig `mapstructure:"auth"`
+	Name        string     `mapstructure:"name"`
+	BaseURL     string     `mapstructure:"base_url"`
+	SchemaPath  string     `mapstructure:"schema"`
+	Environment string     `mapstructure:"environment"`
+	Auth        AuthConfig `mapstructure:"auth"`
 }
 
 type AuthConfig struct {
@@ -98,10 +98,10 @@ func validate(cfg *Config) error {
 // AsModel converts the loaded target configuration into a domain Target.
 func (t TargetConfig) AsModel() model.Target {
 	return model.Target{
-		Name:         t.Name,
-		BaseURL:      t.BaseURL,
-		SchemaPath:   t.SchemaPath,
-		Environment:  t.Environment,
+		Name:        t.Name,
+		BaseURL:     t.BaseURL,
+		SchemaPath:  t.SchemaPath,
+		Environment: t.Environment,
 		Auth: model.AuthConfig{
 			Type: t.Auth.Type,
 			Env:  t.Auth.Env,

@@ -14,6 +14,14 @@ Configuration lives in `backendtest.yaml` in the working directory unless `--con
 
 ## Development
 
+Before you commit, run the same checks as CI (formatters plus linters):
+
+```bash
+make lint
+```
+
+That runs `golangci-lint fmt` (gofmt + goimports) and `golangci-lint run`. Install [golangci-lint](https://golangci-lint.run/welcome/install/) v2 locally, or rely on CI after pushing.
+
 ```bash
 go test ./... -race
 go build ./cmd/bt
