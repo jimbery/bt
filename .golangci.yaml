@@ -22,15 +22,13 @@ linters:
     - exhaustive      # checks switch statements on enums are exhaustive
     - nilerr          # finds cases where nil error is returned incorrectly
     - unparam         # reports unused function parameters
-
-linters-settings:
-  exhaustive:
-    default-signifies-exhaustive: true
-
-issues:
-  exclude-rules:
-    # Test files get a bit more latitude
-    - path: _test\.go
-      linters:
-        - errcheck
-        - unparam
+  settings:
+    exhaustive:
+      default-signifies-exhaustive: true
+  exclusions:
+    rules:
+      # Test files get a bit more latitude
+      - path: _test\.go
+        linters:
+          - errcheck
+          - unparam
