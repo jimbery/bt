@@ -1,6 +1,6 @@
 # ADR-002: Unified strategy engine
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Date:** 2026-05-09
 
 ---

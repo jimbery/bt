@@ -1,6 +1,6 @@
 # ADR-005: RPC/gRPC plugin boundary
 
-**Status:** Proposed  
+**Status:** Deferred  
 **Date:** 2026-05-09
 
 ---

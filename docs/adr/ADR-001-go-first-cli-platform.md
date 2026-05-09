@@ -1,6 +1,6 @@
 # ADR-001: Go-first CLI platform
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Date:** 2026-05-09
 
 ---

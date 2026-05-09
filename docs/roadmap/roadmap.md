@@ -23,7 +23,7 @@ Deliverables:
 - Viper config loading and schema validation
 - Core domain model types (`Target`, `Operation`, `Invariant`, `StrategySpec`, `TestPlan`, `Case`, `Result`)
 - Logging and structured error model
-- ADR-001 through ADR-007 written and reviewed
+- ADR-001, ADR-002, ADR-006 **Accepted**; ADR-005 **Deferred**; ADR-003, ADR-004, ADR-007 **Proposed** (see `/docs/adr/` and roadmap table)
 
 Exit criterion: `bt init` scaffolds a valid `backendtest.yaml`, `bt validate` checks it against schema and reports errors clearly.
 
@@ -174,15 +174,15 @@ The following are planned work but not blockers for a useful v1. They slot in af
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| ADR-001 | Go-first CLI platform | Proposed |
-| ADR-002 | Unified strategy engine | Proposed |
+| ADR-001 | Go-first CLI platform | Accepted |
+| ADR-002 | Unified strategy engine | Accepted |
 | ADR-003 | Rapid for property testing | Proposed |
 | ADR-004 | Native Go fuzzing for robustness mode | Proposed |
-| ADR-005 | RPC/gRPC plugin boundary | Proposed |
-| ADR-006 | OpenAPI-first adapter strategy | Proposed |
+| ADR-005 | RPC/gRPC plugin boundary | Deferred |
+| ADR-006 | OpenAPI-first adapter strategy | Accepted |
 | ADR-007 | MCP-first AI integration | Proposed |
 
-ADRs live in `/docs/adr/` and should be written and reviewed before M1 coding begins.
+ADRs live in `/docs/adr/`. **Accepted** means the decision is in force in the codebase; **Proposed** is awaiting the milestone that implements it; **Deferred** matches post–M8 / deferred roadmap work.
 
 ---
 

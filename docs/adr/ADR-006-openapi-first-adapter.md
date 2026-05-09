@@ -1,6 +1,6 @@
 # ADR-006: OpenAPI-first adapter strategy
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Date:** 2026-05-09
 
 ---
