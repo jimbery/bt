@@ -1,7 +1,12 @@
-.PHONY: test bt orders-api run-orders-api run-bt-orders run-integration-local
+.PHONY: test lint bt orders-api run-orders-api run-bt-orders run-integration-local
 
 test:
 	go test ./... -race
+
+# Match CI: format (gofmt + goimports) then linters. Run before every commit.
+lint:
+	golangci-lint fmt
+	golangci-lint run
 
 bt:
 	go build -o bt ./cmd/bt

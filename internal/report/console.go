@@ -3,6 +3,7 @@ package report
 import (
 	"fmt"
 	"io"
+	"path/filepath"
 
 	"github.com/jayimbery/bt/pkg/model"
 )
@@ -22,6 +23,10 @@ func (r *consoleReporter) Write(results []model.Result) error {
 			status, res.CaseID, res.StatusCode, res.Duration)
 		for _, f := range res.Failures {
 			_, _ = fmt.Fprintf(r.w, "       %s: %s\n", f.Invariant, f.Message)
+		}
+		if res.ArtifactPath != "" {
+			_, _ = fmt.Fprintf(r.w, "       artifact: %s\n", res.ArtifactPath)
+			_, _ = fmt.Fprintf(r.w, "       replay:   bt replay %s\n", filepath.ToSlash(res.ArtifactPath))
 		}
 	}
 
