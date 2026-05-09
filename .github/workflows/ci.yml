@@ -19,7 +19,8 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          # v1.x binaries are built with older Go and reject go.mod toolchains > their runtime.
+          version: v2.7.2
 
       - name: Test
         run: go test ./... -race -coverprofile=coverage.out
