@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/spf13/viper"
+
+	"github.com/jayimbery/bt/pkg/model"
 )
 
 var ErrConfigNotFound = errors.New("config file not found")
@@ -84,10 +86,23 @@ func applyDefaults(v *viper.Viper) {
 
 func validate(cfg *Config) error {
 	if cfg.Target.Name == "" {
-		return errors.New("validation error: target.name is required")
+		return errors.New("validation error: target.name is required (this file must be a bt config with `target.name`, `target.base_url`, and `target.schema`; a standalone OpenAPI document is not valid here — see testdata/backendtest.yaml)")
 	}
 	if cfg.Target.BaseURL == "" {
 		return errors.New("validation error: target.base_url is required")
 	}
 	return nil
+}
+
+// AsModel converts the loaded target configuration into a domain Target.
+func (t TargetConfig) AsModel() model.Target {
+	return model.Target{
+		Name:       t.Name,
+		BaseURL:    t.BaseURL,
+		SchemaPath: t.SchemaPath,
+		Auth: model.AuthConfig{
+			Type: t.Auth.Type,
+			Env:  t.Auth.Env,
+		},
+	}
 }

@@ -1,0 +1,8 @@
+cases:
+  - id: httpbin-200
+    operation_id: GetStatus200
+    input:
+      method: GET
+      path: /status/200
+    expected:
+      status_code: 200
