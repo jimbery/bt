@@ -17,9 +17,9 @@ jobs:
           cache: true
 
       - name: Lint
-        uses: golangci/golangci-lint-action@v6
+        # v7+ is required for golangci-lint v2 (v6 only supports v1.x).
+        uses: golangci/golangci-lint-action@v7
         with:
-          # v1.x binaries are built with older Go and reject go.mod toolchains > their runtime.
           version: v2.7.2
 
       - name: Test
