@@ -1,0 +1,36 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/jayimbery/bt
+
+linters:
+  enable:
+    - errcheck        # flags unchecked errors
+    # gosimple: merged into staticcheck in golangci-lint v2
+    - govet           # reports suspicious constructs
+    - ineffassign     # detects unused assignments
+    - staticcheck     # broad static analysis
+    - unused          # finds unused code
+    - misspell        # catches common spelling mistakes in comments/strings
+    - godot           # enforces full stops on comments
+    - exhaustive      # checks switch statements on enums are exhaustive
+    - nilerr          # finds cases where nil error is returned incorrectly
+    - unparam         # reports unused function parameters
+
+linters-settings:
+  exhaustive:
+    default-signifies-exhaustive: true
+
+issues:
+  exclude-rules:
+    # Test files get a bit more latitude
+    - path: _test\.go
+      linters:
+        - errcheck
+        - unparam

@@ -1,0 +1,16 @@
+# Build output
+bt
+dist/
+
+# Runtime artifacts
+.bt/
+
+# GoReleaser
+*.tar.gz
+*.zip
+checksums.txt
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
