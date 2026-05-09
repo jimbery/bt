@@ -1,0 +1,17 @@
+# These cases are expected to fail. They exist to validate that bt produces
+# artifacts correctly and that the replay system works end-to-end.
+# They run in CI in a separate step that is allowed to fail (continue-on-error: true).
+
+cases:
+  # The broken endpoint deliberately omits required fields on odd-numbered calls.
+  # This case asserts a header that the broken endpoint never sets, so it
+  # always fails and always produces an artifact.
+  - id: broken-endpoint-missing-header
+    operation_id: GetOrderBroken
+    input:
+      method: GET
+      path: /orders/ord-0001/broken
+    expected:
+      status_code: 200
+      headers:
+        X-Request-ID: "should-not-be-present"

@@ -51,14 +51,43 @@ jobs:
       - name: Ensure bt report directory
         run: mkdir -p examples/orders-api/bt/.bt/reports
 
-      - name: Run bt integration tests
+      - name: Integration tests (passing cases)
         run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
 
-      - name: Run bt integration tests (JSON output)
+      - name: Integration tests (JSON output)
         run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --output json
 
-      - name: Run bt integration tests (JUnit to artifact)
+      - name: Integration tests (JUnit to artifact)
         run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --output junit > examples/orders-api/bt/.bt/reports/results.xml
+
+      - name: Integration tests (expected failures — artifact production)
+        run: ./bt run --config examples/orders-api/bt/backendtest-failures.yaml --strategy table || true
+
+      - name: Verify artifact was produced
+        run: |
+          ARTIFACT_DIR="examples/orders-api/bt/.bt/artifacts"
+          COUNT=$(ls "$ARTIFACT_DIR"/*.json 2>/dev/null | wc -l)
+          if [ "$COUNT" -eq 0 ]; then
+            echo "FAIL: No artifact was produced by the expected-failure run"
+            exit 1
+          fi
+          echo "OK: $COUNT artifact(s) found"
+          ls -la "$ARTIFACT_DIR"
+
+      - name: Replay most recent artifact
+        run: |
+          ARTIFACT_DIR="examples/orders-api/bt/.bt/artifacts"
+          LATEST=$(ls -t "$ARTIFACT_DIR"/*.json | head -1)
+          echo "Replaying: $LATEST"
+          ./bt replay --config examples/orders-api/bt/backendtest.yaml "$LATEST" || true
+
+      - name: Upload bt artifacts (.bt)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bt-artifacts
+          path: examples/orders-api/bt/.bt/
+          retention-days: 7
 
       - name: Upload JUnit results
         if: always()
@@ -66,3 +95,4 @@ jobs:
         with:
           name: test-results
           path: examples/orders-api/bt/.bt/reports/
+          retention-days: 7

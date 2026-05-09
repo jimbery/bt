@@ -104,7 +104,17 @@ func handleBrokenOrder(s *store) http.HandlerFunc {
 		id := r.PathValue("id")
 		o, ok := s.get(id)
 		if !ok {
-			writeError(w, http.StatusNotFound, "ORDER_NOT_FOUND", "order not found")
+			// Self-contained broken responses for unknown IDs (M3.5 replay smoke tests).
+			if n%2 == 0 {
+				writeJSON(w, http.StatusOK, map[string]any{
+					"id":     id,
+					"status": "unknown",
+				})
+				return
+			}
+			writeJSON(w, http.StatusOK, map[string]any{
+				"id": id,
+			})
 			return
 		}
 		if n%2 == 0 {

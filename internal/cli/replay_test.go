@@ -131,6 +131,102 @@ func TestReplayCommand_FailureNoLongerReproducible(t *testing.T) {
 	}
 }
 
+func TestReplayCommand_ResponseHeaderFailureStillPresent(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	dir := t.TempDir()
+	a := model.Artifact{
+		ID:           "artifact-hdr",
+		StrategyKind: "table",
+		CaseID:       "broken-endpoint-missing-header",
+		OccurredAt:   time.Now().UTC(),
+		Environment:  "test",
+		Request: model.RequestDetail{
+			Method: "GET",
+			URL:    "/orders/x/broken",
+		},
+		Response: model.ResponseDetail{StatusCode: http.StatusOK},
+		Failures: []model.Failure{
+			{
+				Invariant: "response_header",
+				Message:   `header "X-Request-ID": expected "should-not-be-present", got ""`,
+				Expected:  "should-not-be-present",
+				Actual:    "",
+			},
+		},
+	}
+	data, err := json.MarshalIndent(a, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifactPath := filepath.Join(dir, "artifact-header.json")
+	if err := os.WriteFile(artifactPath, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfgPath := writeReplayConfig(t, dir, server.URL)
+	var out bytes.Buffer
+	cmd := cli.NewRootCmd()
+	cmd.SetArgs([]string{"replay", "--config", cfgPath, artifactPath})
+	cmd.SetOut(&out)
+	_ = cmd.Execute()
+	if !containsString(out.String(), "still present") && !containsString(out.String(), "FAIL") {
+		t.Errorf("expected header mismatch to still fail replay, got:\n%s", out.String())
+	}
+}
+
+func TestReplayCommand_ResponseHeaderFailureResolved(t *testing.T) {
+	t.Parallel()
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("X-Request-ID", "should-not-be-present")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	dir := t.TempDir()
+	a := model.Artifact{
+		ID:           "artifact-hdr",
+		StrategyKind: "table",
+		CaseID:       "broken-endpoint-missing-header",
+		OccurredAt:   time.Now().UTC(),
+		Environment:  "test",
+		Request:      model.RequestDetail{Method: "GET", URL: "/x"},
+		Response:     model.ResponseDetail{StatusCode: http.StatusOK},
+		Failures: []model.Failure{
+			{
+				Invariant: "response_header",
+				Message:   `header "X-Request-ID": expected "should-not-be-present", got ""`,
+				Expected:  "should-not-be-present",
+				Actual:    "",
+			},
+		},
+	}
+	data, err := json.MarshalIndent(a, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	artifactPath := filepath.Join(dir, "artifact-header.json")
+	if err := os.WriteFile(artifactPath, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfgPath := writeReplayConfig(t, dir, server.URL)
+	var out bytes.Buffer
+	cmd := cli.NewRootCmd()
+	cmd.SetArgs([]string{"replay", "--config", cfgPath, artifactPath})
+	cmd.SetOut(&out)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected replay to pass when header now matches, got: %v", err)
+	}
+	if !containsString(out.String(), "PASS") || !containsString(out.String(), "no longer") {
+		t.Errorf("expected pass output, got:\n%s", out.String())
+	}
+}
+
 func containsString(s, substr string) bool {
 	if len(s) < len(substr) {
 		return false

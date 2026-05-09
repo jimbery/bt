@@ -1,0 +1,19 @@
+# Expected-failure cases for M3.5 (artifact + replay smoke). Run with:
+#   ./bt run --config examples/orders-api/bt/backendtest-failures.yaml --strategy table || true
+version: 1
+
+target:
+  name: orders-api
+  base_url: http://localhost:8080
+  schema: examples/orders-api/openapi.yaml
+
+strategies:
+  - type: table
+    file: examples/orders-api/bt/tests/table-expected-failures.yaml
+
+report:
+  formats: [console, json]
+  output_dir: examples/orders-api/bt/.bt/reports
+
+safety:
+  profile: safe

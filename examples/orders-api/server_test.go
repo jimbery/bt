@@ -342,6 +342,21 @@ func TestBrokenEndpoint_IsNotConsistent(t *testing.T) {
 	}
 }
 
+func TestBrokenEndpoint_NonExistentID_StillResponds200(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/orders/does-not-exist/broken")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200 from broken endpoint for unknown ID, got %d", resp.StatusCode)
+	}
+}
+
 func TestAllEndpoints_ReturnJSONContentType(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()
