@@ -120,7 +120,7 @@ func TestDiscoverOperations_EachOperation_HasRequiredFields(t *testing.T) {
 }
 
 func TestSuggestStrategy_EmptyOperations_ReturnsEmptyRecommendations(t *testing.T) {
-	h := tools.SuggestStrategyHandler()
+	h := tools.SuggestStrategyHandler(nil)
 	input := mustMarshal(t, map[string]any{"operations": []any{}})
 	result, err := h(context.Background(), input)
 	if err != nil {
@@ -136,7 +136,7 @@ func TestSuggestStrategy_EmptyOperations_ReturnsEmptyRecommendations(t *testing.
 }
 
 func TestSuggestStrategy_POSTWithBody_RecommendsPropertyAndFuzz(t *testing.T) {
-	h := tools.SuggestStrategyHandler()
+	h := tools.SuggestStrategyHandler(nil)
 	input := mustMarshal(t, map[string]any{
 		"operations": []any{
 			map[string]any{"id": "CreateOrder", "method": "POST", "has_body": true},
@@ -177,7 +177,7 @@ func TestSuggestStrategy_POSTWithBody_RecommendsPropertyAndFuzz(t *testing.T) {
 }
 
 func TestSuggestStrategy_GETNoBody_DoesNotRecommendPropertyAsPrimary(t *testing.T) {
-	h := tools.SuggestStrategyHandler()
+	h := tools.SuggestStrategyHandler(nil)
 	input := mustMarshal(t, map[string]any{
 		"operations": []any{
 			map[string]any{"id": "GetOrder", "method": "GET", "has_body": false},
@@ -202,7 +202,7 @@ func TestSuggestStrategy_GETNoBody_DoesNotRecommendPropertyAsPrimary(t *testing.
 
 func TestSuggestStrategy_AllOperations_HaveTableRecommended(t *testing.T) {
 	methods := []string{"GET", "POST", "PUT", "PATCH", "DELETE"}
-	h := tools.SuggestStrategyHandler()
+	h := tools.SuggestStrategyHandler(nil)
 	for _, method := range methods {
 		input := mustMarshal(t, map[string]any{
 			"operations": []any{
@@ -232,7 +232,7 @@ func TestSuggestStrategy_AllOperations_HaveTableRecommended(t *testing.T) {
 }
 
 func TestSuggestStrategy_EachRecommendation_HasRationale(t *testing.T) {
-	h := tools.SuggestStrategyHandler()
+	h := tools.SuggestStrategyHandler(nil)
 	input := mustMarshal(t, map[string]any{
 		"operations": []any{
 			map[string]any{"id": "CreateOrder", "method": "POST", "has_body": true},

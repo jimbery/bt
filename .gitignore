@@ -18,3 +18,5 @@ checksums.txt
 .idea/
 .vscode/
 internal/strategy/property/testdata/
+
+.env

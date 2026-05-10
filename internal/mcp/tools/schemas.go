@@ -34,6 +34,21 @@ var inputSuggestStrategy = json.RawMessage(`{
   }
 }`)
 
+var inputSuggestInvariants = json.RawMessage(`{
+  "type": "object",
+  "required": ["schema_path", "operation_id"],
+  "properties": {
+    "schema_path": {
+      "type": "string",
+      "description": "Path to an OpenAPI 3.x schema file"
+    },
+    "operation_id": {
+      "type": "string",
+      "description": "The operationId to generate invariant suggestions for"
+    }
+  }
+}`)
+
 var inputValidate = json.RawMessage(`{
   "type": "object",
   "required": ["config_path"],

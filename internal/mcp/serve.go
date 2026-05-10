@@ -13,6 +13,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 
+	"github.com/jayimbery/bt/internal/ai"
 	"github.com/jayimbery/bt/internal/mcp/registry"
 	"github.com/jayimbery/bt/internal/mcp/tools"
 )
@@ -25,8 +26,17 @@ func ServeStdio(ctx context.Context, defaultConfigPath string, errLog io.Writer)
 	}
 	logger := log.New(errLog, "", log.LstdFlags)
 
+	pc, err := ai.LoadProviderConfig()
+	if err != nil {
+		return fmt.Errorf("ai config: %w", err)
+	}
+	provider, err := ai.NewProvider(pc)
+	if err != nil {
+		return fmt.Errorf("ai provider: %w", err)
+	}
+
 	reg := registry.New()
-	for _, t := range tools.All() {
+	for _, t := range tools.AllWithProvider(provider) {
 		if err := reg.Register(t); err != nil {
 			return fmt.Errorf("register tool %q: %w", t.Name, err)
 		}
@@ -34,7 +44,7 @@ func ServeStdio(ctx context.Context, defaultConfigPath string, errLog io.Writer)
 
 	srv := mcpserver.NewMCPServer("bt", "1.0.0")
 
-	for _, def := range tools.All() {
+	for _, def := range tools.AllWithProvider(provider) {
 		toolName := def.Name
 		mcpTool := mcp.NewToolWithRawSchema(def.Name, def.Description, def.InputSchema)
 		srv.AddTool(mcpTool, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
