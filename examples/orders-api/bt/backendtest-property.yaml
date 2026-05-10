@@ -1,0 +1,25 @@
+version: 1
+
+target:
+  name: orders-api
+  base_url: http://localhost:8080
+  schema: examples/orders-api/spec/openapi.yaml
+
+strategies:
+  - type: property
+    config:
+      checks: 120
+    invariants:
+      - no_5xx
+      - response_matches_schema
+      - idempotency_key_prevents_duplicates
+    operations:
+      - GetOrderBroken
+      - CreateOrder
+
+report:
+  formats: [console, json]
+  output_dir: ./.bt/reports
+
+safety:
+  profile: safe

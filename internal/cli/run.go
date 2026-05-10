@@ -2,6 +2,8 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -97,14 +99,36 @@ func newRunCmd() *cobra.Command {
 				return fmt.Errorf("execute: %w", err)
 			}
 
+			outPath, err := cmd.Flags().GetString("output-file")
+			if err != nil {
+				return err
+			}
+			reportOut := cmd.OutOrStdout()
+			if outPath != "" {
+				if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
+					return fmt.Errorf("output-file: %w", err)
+				}
+				f, err := os.Create(outPath)
+				if err != nil {
+					return fmt.Errorf("output-file: %w", err)
+				}
+				defer func() { _ = f.Close() }()
+				switch outputFormat {
+				case "json", "junit":
+					reportOut = f
+				default:
+					reportOut = io.MultiWriter(cmd.OutOrStdout(), f)
+				}
+			}
+
 			var rep report.Reporter
 			switch outputFormat {
 			case "json":
-				rep = report.NewJSON(cmd.OutOrStdout())
+				rep = report.NewJSON(reportOut)
 			case "junit":
-				rep = report.NewJUnit(cmd.OutOrStdout())
+				rep = report.NewJUnit(reportOut)
 			default:
-				rep = report.NewConsole(cmd.OutOrStdout())
+				rep = report.NewConsole(reportOut)
 			}
 
 			if err := rep.Write(results); err != nil {
@@ -123,6 +147,7 @@ func newRunCmd() *cobra.Command {
 
 	cmd.Flags().Int64("seed", 0, "PRNG seed for property strategy (rapid); omit for random seed")
 	cmd.Flags().Int("checks", 0, "number of property checks per operation (rapid); 0 uses default from strategy")
+	cmd.Flags().String("output-file", "", "write report to this path (json/junit only; console also copies when set)")
 	return cmd
 }
 

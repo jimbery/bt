@@ -55,7 +55,7 @@ func handleCreateOrder(s *store) http.HandlerFunc {
 			writeError(w, http.StatusBadRequest, "MISSING_CURRENCY", "currency is required")
 			return
 		}
-		o := s.create(req.Amount, req.Currency, req.Description)
+		o := s.create(req.Amount, req.Currency, req.Description, r.Header.Get("Idempotency-Key"))
 		writeJSON(w, http.StatusCreated, o)
 	}
 }

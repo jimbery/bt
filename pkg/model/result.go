@@ -14,6 +14,10 @@ type Result struct {
 	Request      RequestDetail  `json:"request"`
 	Response     ResponseDetail `json:"response"`
 	ArtifactPath string         `json:"artifact_path,omitempty"`
+	StrategyKind string         `json:"strategy_kind,omitempty"`
+	Seed         int64          `json:"seed,omitempty"`
+	CasesRun     int            `json:"cases_run,omitempty"`
+	ShrinkCount  int            `json:"shrink_count,omitempty"`
 }
 
 type Failure struct {
@@ -66,6 +70,10 @@ func (r Result) MarshalJSON() ([]byte, error) {
 		Request      RequestDetail  `json:"request"`
 		Response     ResponseDetail `json:"response"`
 		ArtifactPath string         `json:"artifact_path,omitempty"`
+		StrategyKind string         `json:"strategy_kind,omitempty"`
+		Seed         int64          `json:"seed,omitempty"`
+		CasesRun     int            `json:"cases_run,omitempty"`
+		ShrinkCount  int            `json:"shrink_count,omitempty"`
 	}
 	return json.Marshal(out{
 		CaseID:       r.CaseID,
@@ -76,6 +84,10 @@ func (r Result) MarshalJSON() ([]byte, error) {
 		Request:      r.Request,
 		Response:     r.Response,
 		ArtifactPath: r.ArtifactPath,
+		StrategyKind: r.StrategyKind,
+		Seed:         r.Seed,
+		CasesRun:     r.CasesRun,
+		ShrinkCount:  r.ShrinkCount,
 	})
 }
 
@@ -89,6 +101,10 @@ func (r *Result) UnmarshalJSON(data []byte) error {
 		Request      RequestDetail  `json:"request"`
 		Response     ResponseDetail `json:"response"`
 		ArtifactPath string         `json:"artifact_path,omitempty"`
+		StrategyKind string         `json:"strategy_kind,omitempty"`
+		Seed         int64          `json:"seed,omitempty"`
+		CasesRun     int            `json:"cases_run,omitempty"`
+		ShrinkCount  int            `json:"shrink_count,omitempty"`
 	}
 	var aux in
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -102,5 +118,9 @@ func (r *Result) UnmarshalJSON(data []byte) error {
 	r.Request = aux.Request
 	r.Response = aux.Response
 	r.ArtifactPath = aux.ArtifactPath
+	r.StrategyKind = aux.StrategyKind
+	r.Seed = aux.Seed
+	r.CasesRun = aux.CasesRun
+	r.ShrinkCount = aux.ShrinkCount
 	return nil
 }
