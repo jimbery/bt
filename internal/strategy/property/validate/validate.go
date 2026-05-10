@@ -235,12 +235,11 @@ func jsonEqual(a, b any) bool {
 }
 
 func isJSONInteger(v any) bool {
-	switch v.(type) {
+	switch x := v.(type) {
 	case int, int32, int64, json.Number:
 		return true
 	case float64:
-		f := v.(float64)
-		return f == math.Trunc(f) && !math.IsInf(f, 0) && !math.IsNaN(f)
+		return x == math.Trunc(x) && !math.IsInf(x, 0) && !math.IsNaN(x)
 	default:
 		return false
 	}

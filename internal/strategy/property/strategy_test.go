@@ -39,10 +39,10 @@ func TestPropertyStrategy_No5xx_StableServer(t *testing.T) {
 	}
 	st := property.New()
 	spec := strategy.Spec{
-		Kind:        strategy.KindProperty,
-		Operations:  []string{op.ID},
-		Invariants:  []model.Invariant{{Name: model.InvariantNo5xx}},
-		Config:      map[string]any{"checks": 15, "seed": int64(42)},
+		Kind:       strategy.KindProperty,
+		Operations: []string{op.ID},
+		Invariants: []model.Invariant{{Name: model.InvariantNo5xx}},
+		Config:     map[string]any{"checks": 15, "seed": int64(42)},
 	}
 	cases, err := st.Plan(context.Background(), spec, []model.Operation{op})
 	if err != nil {

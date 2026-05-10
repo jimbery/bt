@@ -8,9 +8,9 @@ const (
 
 // Property-strategy invariant names.
 const (
-	InvariantNo5xx                        = "no_5xx"
-	InvariantResponseMatchesSchema        = "response_matches_schema"
-	InvariantIdempotencyKeyPreventsDupes  = "idempotency_key_prevents_duplicates"
+	InvariantNo5xx                       = "no_5xx"
+	InvariantResponseMatchesSchema       = "response_matches_schema"
+	InvariantIdempotencyKeyPreventsDupes = "idempotency_key_prevents_duplicates"
 )
 
 // IdempotencyResult captures two HTTP responses for the same idempotent request pair.

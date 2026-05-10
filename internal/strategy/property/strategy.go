@@ -87,16 +87,13 @@ func (s *propertyStrategy) Execute(ctx context.Context, cases []model.Case, exec
 		if !ok {
 			return nil, fmt.Errorf("property strategy: unknown operation %q", c.OperationID)
 		}
-		res, err := s.runOneOperation(ctx, exec, c, op)
-		if err != nil {
-			return nil, err
-		}
+		res := s.runOneOperation(ctx, exec, c, op)
 		results = append(results, res)
 	}
 	return results, nil
 }
 
-func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Executor, c model.Case, op model.Operation) (model.Result, error) {
+func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Executor, c model.Case, op model.Operation) model.Result {
 	tb := newPropTB(c.ID)
 	applyRapidFlags(s.checks, s.seed)
 
@@ -179,7 +176,7 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 			final.ArtifactPath = path
 		}
 	}
-	return final, nil
+	return final
 }
 
 func evaluateInvariants(op model.Operation, res model.Result, invs []model.Invariant, idem *model.IdempotencyResult) []model.Failure {

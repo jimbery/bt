@@ -177,6 +177,15 @@ make lint
 
 That runs `golangci-lint fmt` (gofmt + goimports) and `golangci-lint run`. Install [golangci-lint](https://golangci-lint.run/welcome/install/) v2 locally, or rely on CI after pushing.
 
+**Optional — run `make lint` on every commit** (same commands CI uses):
+
+```bash
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-commit   # once per clone
+```
+
+The hook calls `make lint`; fix reported issues before `git commit` succeeds.
+
 ```bash
 go test ./... -race
 make bt
