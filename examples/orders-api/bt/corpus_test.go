@@ -8,6 +8,21 @@ import (
 	"testing"
 )
 
+// isAutoSavedCorpusFile matches fuzz corpus.Save output (<sha256>.json).
+func isAutoSavedCorpusFile(name string) bool {
+	base := strings.TrimSuffix(strings.ToLower(name), ".json")
+	if len(base) != 64 {
+		return false
+	}
+	for _, c := range base {
+		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 func TestCorpusFiles_AreValidJSON(t *testing.T) {
 	entries, err := os.ReadDir("corpus")
 	if err != nil {
@@ -16,6 +31,9 @@ func TestCorpusFiles_AreValidJSON(t *testing.T) {
 	var jsonFiles int
 	for _, entry := range entries {
 		if !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+		if isAutoSavedCorpusFile(entry.Name()) {
 			continue
 		}
 		jsonFiles++
@@ -37,6 +55,9 @@ func TestCorpusFiles_HaveRequiredFields(t *testing.T) {
 	entries, _ := os.ReadDir("corpus")
 	for _, entry := range entries {
 		if !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+		if isAutoSavedCorpusFile(entry.Name()) {
 			continue
 		}
 		data, err := os.ReadFile(filepath.Join("corpus", entry.Name()))
@@ -65,6 +86,9 @@ func TestCorpusFiles_MethodsAreUppercase(t *testing.T) {
 		if !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
+		if isAutoSavedCorpusFile(entry.Name()) {
+			continue
+		}
 		data, _ := os.ReadFile(filepath.Join("corpus", entry.Name()))
 		var probe struct {
 			Method string `json:"method"`
@@ -82,6 +106,9 @@ func TestCorpusFiles_NoDeleteMethods(t *testing.T) {
 		if !strings.HasSuffix(entry.Name(), ".json") {
 			continue
 		}
+		if isAutoSavedCorpusFile(entry.Name()) {
+			continue
+		}
 		data, _ := os.ReadFile(filepath.Join("corpus", entry.Name()))
 		var probe struct {
 			Method string `json:"method"`
@@ -97,6 +124,9 @@ func TestCorpusFiles_PostBodiesAreValidJSON(t *testing.T) {
 	entries, _ := os.ReadDir("corpus")
 	for _, entry := range entries {
 		if !strings.HasSuffix(entry.Name(), ".json") {
+			continue
+		}
+		if isAutoSavedCorpusFile(entry.Name()) {
 			continue
 		}
 		data, _ := os.ReadFile(filepath.Join("corpus", entry.Name()))

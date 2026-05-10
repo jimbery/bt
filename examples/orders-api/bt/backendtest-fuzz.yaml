@@ -13,7 +13,6 @@ strategies:
       - ListOrders
     config:
       fuzz_iterations: 100
-      corpus_dir: corpus
 
 report:
   formats: [console, json]

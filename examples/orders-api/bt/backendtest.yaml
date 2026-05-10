@@ -24,10 +24,14 @@ strategies:
     config:
       checks: 30
 
-  # Fuzz (M5): mutation-based probes; safe profile blocks DELETE/PUT by default.
+  # Fuzz (M5 / M5.5): same operation set as backendtest-fuzz.yaml. Do not fuzz
+  # GetHealth alone — path/method/header mutations leave the OpenAPI operation
+  # contract and produce noisy unexpected_status / invalid header failures in CI.
   - type: fuzz
     operations:
-      - GetHealth
+      - CreateOrder
+      - GetOrderBroken
+      - ListOrders
     config:
       fuzz_iterations: 20
 

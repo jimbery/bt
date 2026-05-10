@@ -88,15 +88,17 @@ func TestFuzzConfig_Iterations_IsPositive(t *testing.T) {
 	}
 }
 
-func TestFuzzConfig_CorpusDir_IsSet(t *testing.T) {
+func TestFuzzConfig_CorpusDir_NotBareCorpus(t *testing.T) {
 	data, _ := os.ReadFile("backendtest-fuzz.yaml")
 	var cfg fuzzConfig
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		t.Fatal(err)
 	}
 	dir, _ := cfg.Strategies[0].Config["corpus_dir"].(string)
-	if dir == "" {
-		t.Error("expected corpus_dir to be set in fuzz strategy config")
+	// A bare "corpus" is relative to the process cwd (often wrong in CI/subdirs).
+	// Omit corpus_dir so `bt run` defaults to <config-dir>/corpus.
+	if dir == "corpus" {
+		t.Error(`corpus_dir must not be the bare string "corpus"; omit it for <config-dir>/corpus`)
 	}
 }
 
