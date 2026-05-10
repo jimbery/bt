@@ -81,6 +81,64 @@ jobs:
           echo "Replaying: $LATEST"
           ./bt replay --config examples/orders-api/bt/backendtest.yaml "$LATEST" || true
 
+      # M4.5 — property strategy integration tests
+      - name: Property tests (broken endpoint + create endpoint)
+        run: |
+          ./bt run \
+            --config examples/orders-api/bt/backendtest-property.yaml \
+            --strategy property \
+            --output json \
+            --output-file examples/orders-api/bt/.bt/reports/property-run.json \
+          || true
+
+      - name: Verify property tests found broken endpoint
+        run: |
+          REPORT="examples/orders-api/bt/.bt/reports/property-run.json"
+          if [ ! -f "$REPORT" ]; then
+            echo "FAIL: property run report not produced"
+            exit 1
+          fi
+          echo "Report produced. Contents:"
+          jq '.results | length' "$REPORT" || cat "$REPORT"
+
+          FAILURES=$(jq '[.results[].failures[]? | select(.invariant == "response_matches_schema")] | length' "$REPORT")
+          if [ "$FAILURES" -eq 0 ]; then
+            echo "FAIL: property testing did not find a response_matches_schema failure"
+            exit 1
+          fi
+          echo "OK: found $FAILURES response_matches_schema failure(s)"
+
+      - name: Verify property violation paths are populated
+        run: |
+          REPORT="examples/orders-api/bt/.bt/reports/property-run.json"
+          EMPTY_PATHS=$(jq '[.results[].failures[]? | select(.invariant == "response_matches_schema" and (.path == null or .path == ""))] | length' "$REPORT")
+          if [ "$EMPTY_PATHS" -gt 0 ]; then
+            echo "FAIL: $EMPTY_PATHS schema violation(s) have empty path fields"
+            exit 1
+          fi
+          echo "OK: all schema violations have populated path fields"
+
+      - name: Verify property run seed is logged
+        run: |
+          REPORT="examples/orders-api/bt/.bt/reports/property-run.json"
+          ZERO_SEEDS=$(jq '[.results[] | select(.strategy_kind == "property" and (.seed == null or .seed == 0))] | length' "$REPORT")
+          if [ "$ZERO_SEEDS" -gt 0 ]; then
+            echo "FAIL: $ZERO_SEEDS property result(s) have no seed logged"
+            exit 1
+          fi
+          echo "OK: all property results have seeds logged"
+
+      - name: Go integration tests (property)
+        run: go test -tags=integration ./examples/orders-api/integration/... -count=1
+
+      - name: Upload property run report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: property-run-report
+          path: examples/orders-api/bt/.bt/reports/property-run.json
+          retention-days: 7
+
       - name: Upload bt artifacts (.bt)
         if: always()
         uses: actions/upload-artifact@v4

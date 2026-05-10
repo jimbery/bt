@@ -7,11 +7,11 @@ version: 1
 target:
   name: orders-api
   base_url: http://localhost:8080
-  schema: examples/orders-api/openapi.yaml
+  schema: examples/orders-api/spec/openapi.yaml
 
 strategies:
   - type: table
-    file: examples/orders-api/bt/tests/table.yaml
+    file: examples/orders-api/bt/cases/table.yaml
 
   # Property checks (Rapid): start the API on target.base_url first.
   # GetHealth + ListOrders are read-only GETs with stable 200 + JSON schemas.

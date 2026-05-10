@@ -5,11 +5,11 @@ version: 1
 target:
   name: orders-api
   base_url: http://localhost:8080
-  schema: examples/orders-api/openapi.yaml
+  schema: examples/orders-api/spec/openapi.yaml
 
 strategies:
   - type: table
-    file: examples/orders-api/bt/tests/table-expected-failures.yaml
+    file: examples/orders-api/bt/cases/table-expected-failures.yaml
 
 report:
   formats: [console, json]

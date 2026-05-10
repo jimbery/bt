@@ -5,6 +5,7 @@ dist/
 
 # Runtime artifacts
 .bt/
+testdata/rapid/
 
 # GoReleaser
 *.tar.gz

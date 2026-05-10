@@ -2,6 +2,8 @@ package property
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	"pgregory.net/rapid"
@@ -23,6 +26,22 @@ import (
 // (rapid.checks, rapid.seed). Without this, parallel tests or concurrent Execute
 // calls data-race on the flag package.
 var rapidRunMu sync.Mutex
+
+// rapidTestingOnce registers testing's flags and marks the stdlib flag package as parsed.
+// Rapid's Check path calls testing.Short(); outside go test, short is nil and flag may be
+// unparsed until this runs. See testing.Init and testing.Short.
+var rapidTestingOnce sync.Once
+
+func ensureStdlibTestingForRapid() {
+	rapidTestingOnce.Do(func() {
+		testing.Init()
+		// Cobra uses pflag and does not mark the stdlib flag package parsed; Rapid's
+		// engine calls testing.Short(), which requires flag.Parsed() in non-test binaries.
+		if !testing.Testing() && !flag.Parsed() {
+			_ = flag.CommandLine.Parse([]string{})
+		}
+	})
+}
 
 // ArtifactWriter persists failure bundles (same contract as replay.Writer).
 type ArtifactWriter interface {
@@ -39,7 +58,7 @@ type propertyStrategy struct {
 	opts       Options
 	ops        []model.Operation
 	checks     int
-	seed       *uint64
+	runSeed    uint64
 	invariants []model.Invariant
 }
 
@@ -60,7 +79,7 @@ func (s *propertyStrategy) Plan(_ context.Context, spec strategy.Spec, ops []mod
 	if s.checks <= 0 {
 		s.checks = 100
 	}
-	s.seed = parseSeedFromConfig(spec.Config)
+	s.runSeed = resolveRunSeed(spec.Config)
 	s.invariants = append([]model.Invariant(nil), spec.Invariants...)
 
 	filtered := filterOperations(ops, spec.Operations)
@@ -103,7 +122,9 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 	defer rapidRunMu.Unlock()
 
 	tb := newPropTB(c.ID)
-	applyRapidFlags(s.checks, s.seed)
+	applyRapidFlags(s.checks, &s.runSeed)
+
+	ensureStdlibTestingForRapid()
 
 	start := time.Now()
 	rapid.Check(tb, func(rt *rapid.T) {
@@ -151,24 +172,28 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 	dur := time.Since(start)
 
 	req, resp, failures, failed := tb.exportState()
+	shrinkCount := 0
+	if failed {
+		shrinkCount = 1
+	}
 	final := model.Result{
-		CaseID:     c.ID,
-		StatusCode: resp.StatusCode,
-		Duration:   dur,
-		Response:   resp,
-		Request:    req,
-		Passed:     !failed,
-		Failures:   failures,
+		CaseID:       c.ID,
+		StatusCode:   resp.StatusCode,
+		Duration:     dur,
+		Response:     resp,
+		Request:      req,
+		Passed:       !failed,
+		Failures:     failures,
+		StrategyKind: string(strategy.KindProperty),
+		Seed:         int64(s.runSeed),
+		CasesRun:     s.checks,
+		ShrinkCount:  shrinkCount,
 	}
 	if !final.Passed && s.opts.ArtifactWriter != nil {
-		seedVal := int64(0)
-		if s.seed != nil {
-			seedVal = int64(*s.seed)
-		}
 		artifact := model.Artifact{
 			ID:           fmt.Sprintf("%s-%d", c.ID, time.Now().UnixNano()),
 			StrategyKind: string(strategy.KindProperty),
-			Seed:         seedVal,
+			Seed:         int64(s.runSeed),
 			CaseID:       c.ID,
 			OccurredAt:   time.Now().UTC(),
 			Environment:  s.opts.Environment,
@@ -225,7 +250,7 @@ func buildCaseInput(t *rapid.T, op model.Operation, c model.Case, invs []model.I
 			in.Headers = map[string]string{}
 		}
 		if rapid.Bool().Draw(t, "idem_present") {
-			in.Headers[invariant.HeaderKey()] = rapid.String().Draw(t, "idem_key")
+			in.Headers[invariant.HeaderKey()] = fmt.Sprintf("idem-%016x", rapid.Uint64().Draw(t, "idem_key"))
 		}
 	}
 	return in
@@ -357,47 +382,60 @@ func parseIntFromConfig(cfg map[string]any, key string, def int) int {
 	}
 }
 
-func parseSeedFromConfig(cfg map[string]any) *uint64 {
+func resolveRunSeed(cfg map[string]any) uint64 {
 	if cfg == nil {
-		return nil
+		return randomNonZeroUint64()
 	}
 	v, ok := cfg["seed"]
 	if !ok {
-		return nil
+		return randomNonZeroUint64()
 	}
 	var u uint64
 	switch x := v.(type) {
 	case int:
-		if x < 0 {
-			return nil
+		if x <= 0 {
+			return randomNonZeroUint64()
 		}
 		u = uint64(x)
 	case int64:
-		if x < 0 {
-			return nil
+		if x <= 0 {
+			return randomNonZeroUint64()
 		}
 		u = uint64(x)
 	case float64:
-		if x < 0 {
-			return nil
+		if x <= 0 {
+			return randomNonZeroUint64()
 		}
 		u = uint64(x)
 	case json.Number:
 		i, err := x.Int64()
-		if err != nil || i < 0 {
-			return nil
+		if err != nil || i <= 0 {
+			return randomNonZeroUint64()
 		}
 		u = uint64(i)
 	case string:
 		n, err := strconv.ParseUint(strings.TrimSpace(x), 10, 64)
-		if err != nil {
-			return nil
+		if err != nil || n == 0 {
+			return randomNonZeroUint64()
 		}
 		u = n
 	default:
-		return nil
+		return randomNonZeroUint64()
 	}
-	return &u
+	return u
+}
+
+func randomNonZeroUint64() uint64 {
+	var b [8]byte
+	for {
+		if _, err := rand.Read(b[:]); err != nil {
+			return uint64(time.Now().UnixNano())
+		}
+		u := binary.LittleEndian.Uint64(b[:])
+		if u != 0 {
+			return u
+		}
+	}
 }
 
 func applyRapidFlags(checks int, seed *uint64) {
