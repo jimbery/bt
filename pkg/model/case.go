@@ -1,11 +1,14 @@
 package model
 
+import "strings"
+
 type Case struct {
-	ID          string           `json:"id"`
-	OperationID string           `json:"operation_id"`
-	Input       CaseInput        `json:"input"`
-	Expected    *CaseExpectation `json:"expected,omitempty"`
-	Meta        map[string]any   `json:"meta,omitempty"`
+	ID                string           `json:"id"`
+	OperationID       string           `json:"operation_id"`
+	Input             CaseInput        `json:"input"`
+	Expected          *CaseExpectation `json:"expected,omitempty"`
+	Meta              map[string]any   `json:"meta,omitempty"`
+	ResolvedOperation *Operation       `json:"-"` // set by CLI before Execute for GraphQL-aware validation
 }
 
 type CaseInput struct {
@@ -14,7 +17,14 @@ type CaseInput struct {
 	Headers map[string]string `json:"headers,omitempty"`
 	Query   map[string]string `json:"query,omitempty"`
 	Body    any               `json:"body,omitempty"`
+
+	GQLQuery         string         `json:"gql_query,omitempty"`
+	GQLOperationName string         `json:"gql_operation_name,omitempty"`
+	GQLVariables     map[string]any `json:"gql_variables,omitempty"`
 }
+
+// IsGraphQL reports whether this input represents a GraphQL operation over HTTP.
+func (c CaseInput) IsGraphQL() bool { return strings.TrimSpace(c.GQLQuery) != "" }
 
 type CaseExpectation struct {
 	StatusCode int               `json:"status_code,omitempty"`

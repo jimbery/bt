@@ -15,6 +15,7 @@ func NewRootCmd() *cobra.Command {
 	root.PersistentFlags().String("env", "", "environment profile (local, ci, staging, preprod)")
 	root.PersistentFlags().String("output", "console", "output format (console, json, junit)")
 	root.PersistentFlags().String("strategy", "table", "strategy to run (table, property, fuzz, contract)")
+	root.PersistentFlags().String("adapter", "", "protocol adapter override (openapi, graphql); default from config target.adapter")
 
 	root.AddCommand(newInitCmd())
 	root.AddCommand(newValidateCmd())

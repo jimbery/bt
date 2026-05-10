@@ -1,0 +1,16 @@
+# SDL for bt discovery (adapter: graphql). Run the demo server, then from repo root:
+#   go run ./examples/graphql-smoke &
+#   ./bt run --config examples/graphql-smoke/bt/backendtest.yaml --strategy table --adapter graphql
+type Query {
+  ping: String!
+  widget(id: ID!): Widget
+}
+
+type Mutation {
+  createWidget(name: String!): Widget!
+}
+
+type Widget {
+  id: ID!
+  name: String!
+}

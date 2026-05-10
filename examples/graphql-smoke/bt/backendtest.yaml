@@ -1,0 +1,15 @@
+# From repository root (after starting the server on 127.0.0.1:8099):
+#   go run ./examples/graphql-smoke
+#   ./bt run --config examples/graphql-smoke/bt/backendtest.yaml --strategy table --adapter graphql
+version: 1
+
+target:
+  name: graphql-smoke
+  base_url: http://127.0.0.1:8099
+  adapter: graphql
+  schema: examples/graphql-smoke/schema.graphql
+  graphql_path: /graphql
+
+strategies:
+  - type: table
+    file: examples/graphql-smoke/bt/cases.yaml

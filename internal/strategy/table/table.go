@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/jayimbery/bt/internal/strategy"
+	gqlassert "github.com/jayimbery/bt/internal/strategy/graphql/assert"
 	"github.com/jayimbery/bt/internal/strategy/property/validate"
 	"github.com/jayimbery/bt/pkg/model"
 )
@@ -30,6 +32,10 @@ type Options struct {
 
 	// Environment is recorded in artifact bundles for context.
 	Environment string
+
+	// GQLExecutor runs GraphQL cases when CaseInput.IsGraphQL() is true.
+	// If nil, GraphQL cases fail with a clear configuration error.
+	GQLExecutor strategy.Executor
 }
 
 type tableStrategy struct {
@@ -66,6 +72,10 @@ type caseInputEntry struct {
 	Headers map[string]string `yaml:"headers"`
 	Query   map[string]string `yaml:"query"`
 	Body    any               `yaml:"body"`
+
+	GQLQuery         string         `yaml:"gql_query,omitempty"`
+	GQLOperationName string         `yaml:"gql_operation_name,omitempty"`
+	GQLVariables     map[string]any `yaml:"gql_variables,omitempty"`
 }
 
 type caseExpectedEntry struct {
@@ -100,11 +110,14 @@ func (s *tableStrategy) Plan(_ context.Context, spec strategy.Spec, _ []model.Op
 			ID:          entry.ID,
 			OperationID: entry.OperationID,
 			Input: model.CaseInput{
-				Method:  entry.Input.Method,
-				Path:    entry.Input.Path,
-				Headers: entry.Input.Headers,
-				Query:   entry.Input.Query,
-				Body:    entry.Input.Body,
+				Method:           entry.Input.Method,
+				Path:             entry.Input.Path,
+				Headers:          entry.Input.Headers,
+				Query:            entry.Input.Query,
+				Body:             entry.Input.Body,
+				GQLQuery:         entry.Input.GQLQuery,
+				GQLOperationName: entry.Input.GQLOperationName,
+				GQLVariables:     entry.Input.GQLVariables,
 			},
 		}
 		if entry.Expected != nil {
@@ -160,7 +173,18 @@ func requestDetailFromCase(c model.Case) model.RequestDetail {
 		Headers: cloneStringMap(c.Input.Headers),
 		Query:   cloneStringMap(c.Input.Query),
 	}
-	if c.Input.Body != nil {
+	if c.Input.IsGraphQL() {
+		m := map[string]any{"query": c.Input.GQLQuery}
+		if strings.TrimSpace(c.Input.GQLOperationName) != "" {
+			m["operationName"] = c.Input.GQLOperationName
+		}
+		if c.Input.GQLVariables != nil {
+			m["variables"] = c.Input.GQLVariables
+		}
+		if b, err := json.Marshal(m); err == nil {
+			rd.Body = b
+		}
+	} else if c.Input.Body != nil {
 		if b, err := json.Marshal(c.Input.Body); err == nil {
 			rd.Body = b
 		}
@@ -173,19 +197,58 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 	results := make([]model.Result, 0, len(cases))
 
 	for _, c := range cases {
+		if c.Input.IsGraphQL() && c.ResolvedOperation != nil && c.ResolvedOperation.GQLKind == model.GQLSubscription {
+			failures := []model.Failure{{
+				Invariant: model.InvariantGraphQLResponse,
+				Message:   "GraphQL subscriptions are discovered but not executed by bt",
+			}}
+			results = append(results, model.Result{
+				CaseID:       c.ID,
+				Passed:       false,
+				StrategyKind: string(strategy.KindTable),
+				Request:      requestDetailFromCase(c),
+				Response:     model.ResponseDetail{},
+				Failures:     failures,
+			})
+			continue
+		}
+
+		if c.Input.IsGraphQL() && s.opts.GQLExecutor == nil {
+			failures := []model.Failure{{
+				Invariant: model.InvariantGraphQLResponse,
+				Message:   "graphql cases require a GraphQL executor — configure adapter: graphql in backendtest.yaml",
+			}}
+			results = append(results, model.Result{
+				CaseID:       c.ID,
+				Passed:       false,
+				StrategyKind: string(strategy.KindTable),
+				Request:      requestDetailFromCase(c),
+				Response:     model.ResponseDetail{},
+				Failures:     failures,
+			})
+			continue
+		}
+
 		start := time.Now()
-		resp, err := exec.Run(ctx, c.Input)
+		var resp model.ResponseDetail
+		var err error
+		if c.Input.IsGraphQL() {
+			resp, err = s.opts.GQLExecutor.Run(ctx, c.Input)
+		} else {
+			resp, err = exec.Run(ctx, c.Input)
+		}
 		dur := time.Since(start)
 		if err != nil {
 			return nil, fmt.Errorf("case %q: executor error: %w", c.ID, err)
 		}
 
 		result := model.Result{
-			CaseID:     c.ID,
-			StatusCode: resp.StatusCode,
-			Duration:   dur,
-			Response:   resp,
-			Request:    requestDetailFromCase(c),
+			CaseID:       c.ID,
+			StatusCode:   resp.StatusCode,
+			Duration:     dur,
+			Response:     resp,
+			Request:      requestDetailFromCase(c),
+			StrategyKind: string(strategy.KindTable),
 		}
 
 		var failures []model.Failure
@@ -226,8 +289,23 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 			}
 		}
 
+		if c.Input.IsGraphQL() && c.ResolvedOperation != nil {
+			for _, g := range gqlassert.AssertResponse(resp.Body, *c.ResolvedOperation) {
+				class := ""
+				if g.Severity == gqlassert.Warning {
+					class = "graphql_warning"
+				}
+				failures = append(failures, model.Failure{
+					Invariant:      model.InvariantGraphQLResponse,
+					Classification: class,
+					Message:        g.Message,
+					Path:           g.Field,
+				})
+			}
+		}
+
 		result.Failures = failures
-		result.Passed = len(failures) == 0
+		result.Passed = !tableCaseHasBlockingFailure(failures)
 
 		if !result.Passed && s.opts.ArtifactWriter != nil {
 			artifact := model.Artifact{
@@ -253,4 +331,14 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 	}
 
 	return results, nil
+}
+
+func tableCaseHasBlockingFailure(failures []model.Failure) bool {
+	for _, f := range failures {
+		if f.Invariant == model.InvariantGraphQLResponse && f.Classification == "graphql_warning" {
+			continue
+		}
+		return true
+	}
+	return false
 }

@@ -9,9 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jayimbery/bt/internal/adapter/openapi"
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/exitcode"
+	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/report"
 	"github.com/jayimbery/bt/internal/runner"
 	"github.com/jayimbery/bt/internal/runplan"
@@ -47,8 +47,17 @@ func newRunCmd() *cobra.Command {
 				return exitcode.WrapConfig(fmt.Errorf("config: %w", err))
 			}
 
-			ad := openapi.New()
+			adapterName := strings.TrimSpace(cfg.Target.Adapter)
+			if cmd.Root().PersistentFlags().Changed("adapter") {
+				v, err := cmd.Root().PersistentFlags().GetString("adapter")
+				if err != nil {
+					return err
+				}
+				adapterName = strings.TrimSpace(v)
+			}
+
 			target := cfg.Target.AsModel()
+			ad := runplan.AdapterForName(adapterName)
 			if err := ad.Validate(cmd.Context(), target); err != nil {
 				return exitcode.WrapConfig(fmt.Errorf("adapter validate: %w", err))
 			}
@@ -58,6 +67,12 @@ func newRunCmd() *cobra.Command {
 			}
 
 			opt := runplan.BuildOptions{Stderr: cmd.ErrOrStderr()}
+			if strategy.Kind(strategyName) == strategy.KindTable && strings.EqualFold(adapterName, "graphql") {
+				opt.GQLExecutor = gqlrunner.New(gqlrunner.Config{
+					BaseURL: target.BaseURL,
+					Timeout: runner.DefaultTimeout,
+				})
+			}
 			if cmd.Flags().Changed("safety") {
 				v, err := cmd.Flags().GetString("safety")
 				if err != nil {
@@ -108,6 +123,7 @@ func newRunCmd() *cobra.Command {
 			if err != nil {
 				return exitcode.WrapConfig(fmt.Errorf("plan: %w", err))
 			}
+			runplan.AttachResolvedOperations(cases, ops)
 
 			exec := runner.New(runner.Config{
 				BaseURL: cfg.Target.BaseURL,

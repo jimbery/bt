@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/adapter/openapi"
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/mcp/registry"
+	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/runner"
 	"github.com/jayimbery/bt/internal/runplan"
 	"github.com/jayimbery/bt/internal/strategy"
@@ -51,7 +51,7 @@ func RunHandler() registry.HandlerFunc {
 			}
 		}
 
-		ad := openapi.New()
+		ad := runplan.AdapterForName(cfg.Target.Adapter)
 		target := cfg.Target.AsModel()
 		if valErr := ad.Validate(ctx, target); valErr != nil {
 			out, _ := json.Marshal(map[string]any{
@@ -74,6 +74,12 @@ func RunHandler() registry.HandlerFunc {
 			opt.SeedProvided = true
 			opt.Seed = *in.Seed
 		}
+		if strategy.Kind(strategyName) == strategy.KindTable && strings.EqualFold(strings.TrimSpace(cfg.Target.Adapter), "graphql") {
+			opt.GQLExecutor = gqlrunner.New(gqlrunner.Config{
+				BaseURL: target.BaseURL,
+				Timeout: runner.DefaultTimeout,
+			})
+		}
 
 		st, spec, buildErr := runplan.BuildStrategyAndSpec(cfgPath, strategyName, cfg, opt)
 		if buildErr != nil {
@@ -92,6 +98,7 @@ func RunHandler() registry.HandlerFunc {
 			})
 			return out, nil
 		}
+		runplan.AttachResolvedOperations(cases, ops)
 
 		exec := runner.New(runner.Config{
 			BaseURL: cfg.Target.BaseURL,

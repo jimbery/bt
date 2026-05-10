@@ -36,6 +36,9 @@ type BuildOptions struct {
 
 	CorpusDirProvided bool
 	CorpusDir         string
+
+	// GQLExecutor is wired for table strategy when using the graphql adapter.
+	GQLExecutor strategy.Executor
 }
 
 // BuildStrategyAndSpec returns a strategy implementation and its spec for the named strategy type.
@@ -71,6 +74,7 @@ func BuildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, opt 
 		st = table.NewWithOptions(table.Options{
 			ArtifactWriter: replay.NewWriter(artifactDir),
 			Environment:    cfg.Target.Environment,
+			GQLExecutor:      opt.GQLExecutor,
 		})
 	case strategy.KindProperty:
 		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")

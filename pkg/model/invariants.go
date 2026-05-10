@@ -4,6 +4,7 @@ package model
 const (
 	InvariantStatusCode     = "status_code"
 	InvariantResponseHeader = "response_header"
+	InvariantGraphQLResponse = "graphql_response"
 )
 
 // Property-strategy invariant names.

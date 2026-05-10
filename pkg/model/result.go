@@ -2,6 +2,7 @@ package model
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 )
 
@@ -60,6 +61,19 @@ func (r RequestDetail) AsCaseInput() CaseInput {
 		Query:   r.Query,
 	}
 	if len(r.Body) > 0 {
+		var probe map[string]any
+		if err := json.Unmarshal(r.Body, &probe); err == nil {
+			if q, ok := probe["query"].(string); ok && strings.TrimSpace(q) != "" {
+				ci.GQLQuery = q
+				if on, ok := probe["operationName"].(string); ok {
+					ci.GQLOperationName = on
+				}
+				if vars, ok := probe["variables"].(map[string]any); ok {
+					ci.GQLVariables = vars
+				}
+				return ci
+			}
+		}
 		var v any
 		if err := json.Unmarshal(r.Body, &v); err == nil {
 			ci.Body = v
