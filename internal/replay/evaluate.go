@@ -6,14 +6,15 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jayimbery/bt/internal/strategy/property/validate"
 	"github.com/jayimbery/bt/pkg/model"
 )
 
 var headerFailureNameRE = regexp.MustCompile(`header "([^"]+)"`)
 
 // FailureStillPresentAfterReplay reports whether a recorded failure would still
-// fire given a new response (same rules as table assertions for status and headers).
-func FailureStillPresentAfterReplay(f model.Failure, resp model.ResponseDetail) bool {
+// fire given a new response (same rules as table assertions for status, headers, and response schema when expected is provided).
+func FailureStillPresentAfterReplay(f model.Failure, resp model.ResponseDetail, exp *model.CaseExpectation) bool {
 	switch f.Invariant {
 	case model.InvariantStatusCode:
 		want, ok := expectedAsInt(f.Expected)
@@ -33,6 +34,13 @@ func FailureStillPresentAfterReplay(f model.Failure, resp model.ResponseDetail) 
 		key := http.CanonicalHeaderKey(name)
 		got := resp.Headers[key]
 		return got != want
+	case model.InvariantResponseMatchesSchema:
+		if exp == nil || exp.Schema == nil {
+			// Legacy artifacts without embedded expectations cannot re-evaluate schema; treat as still failing.
+			return true
+		}
+		violations := validate.ValidateResponse(resp.Body, exp.Schema)
+		return len(violations) > 0
 	default:
 		return false
 	}

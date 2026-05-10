@@ -18,6 +18,8 @@ type Config struct {
 	Strategies []StrategyConfig `mapstructure:"strategies"`
 	Report     ReportConfig     `mapstructure:"report"`
 	Safety     SafetyConfig     `mapstructure:"safety"`
+	// Baseline is optional path to baseline YAML (quarantined contract failures). Relative paths resolve from the config file directory.
+	Baseline string `mapstructure:"baseline"`
 }
 
 type TargetConfig struct {

@@ -1,0 +1,21 @@
+# Contract test documentation (informational). The contract strategy reads OpenAPI directly.
+#
+# expected_pass lists operations exercised by examples/orders-api/bt/backendtest.yaml contract.operations.
+# GetOrderBroken is listed under quarantined; it remains in the run so violations stay visible while baseline suppresses exit failure.
+
+expected_pass:
+  - operation_id: GetHealth
+    note: "Returns {status}. Simple shape."
+
+  - operation_id: ListOrders
+    note: "Returns {orders: [Order]}."
+
+  - operation_id: CreateOrder
+    note: "Returns Order on 201."
+
+  - operation_id: GetOrder
+    note: "Contract uses a synthetic path id; 404 Error responses are validated against the Error schema."
+
+quarantined:
+  - operation_id: GetOrderBroken
+    reason: "Inconsistent Order-shaped responses; known violation."

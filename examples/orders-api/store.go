@@ -7,12 +7,13 @@ import (
 )
 
 type order struct {
-	ID          string    `json:"id"`
-	Amount      int       `json:"amount"`
-	Currency    string    `json:"currency"`
-	Description string    `json:"description,omitempty"`
-	Status      string    `json:"status"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID          string     `json:"id"`
+	Amount      int        `json:"amount"`
+	Currency    string     `json:"currency"`
+	Description string     `json:"description,omitempty"`
+	Status      string     `json:"status"`
+	CreatedAt   time.Time  `json:"created_at"`
+	CancelledAt *time.Time `json:"cancelled_at,omitempty"`
 }
 
 type store struct {
@@ -82,6 +83,12 @@ func (s *store) update(id, status string) (*order, bool) {
 		return nil, false
 	}
 	o.Status = status
+	if status == "cancelled" {
+		t := time.Now().UTC()
+		o.CancelledAt = &t
+	} else {
+		o.CancelledAt = nil
+	}
 	return o, true
 }
 

@@ -1,0 +1,56 @@
+# Example: bt doctor + contract strategy in CI
+# Starts the sample orders-api, then runs bt against examples/orders-api/bt/backendtest.yaml.
+name: example-bt
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "cmd/bt/**"
+      - "internal/**"
+      - "pkg/**"
+      - "examples/orders-api/**"
+      - ".github/workflows/example-bt.yml"
+
+jobs:
+  bt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.x"
+
+      - name: Unit tests
+        run: go test -count=1 ./...
+
+      - name: Patch backendtest base_url for CI port
+        run: |
+          set -e
+          sed -i.bak 's|http://localhost:8080|http://127.0.0.1:18080|' examples/orders-api/bt/backendtest.yaml
+
+      - name: Start orders-api
+        run: |
+          set -e
+          ( cd examples/orders-api && PORT=18080 go run . ) &
+          for i in $(seq 1 40); do
+            if curl -fsS "http://127.0.0.1:18080/health" >/dev/null; then
+              echo "orders-api is up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "orders-api did not become ready in time"
+          exit 1
+
+      - name: bt doctor
+        run: go run ./cmd/bt doctor --config examples/orders-api/bt/backendtest.yaml
+
+      - name: bt run (contract)
+        run: go run ./cmd/bt run --config examples/orders-api/bt/backendtest.yaml --strategy contract --output json
+
+      - name: Build bt binary for integration tests
+        run: go build -o bt ./cmd/bt
+
+      - name: Integration tests (contract + doctor)
+        run: go test ./examples/orders-api/integration/... -tags integration -race -count=1 -run 'TestContract|TestDoctor' -v

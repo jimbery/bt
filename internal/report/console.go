@@ -91,6 +91,9 @@ func (r *consoleReporter) Write(results []model.Result) error {
 		}
 	}
 	line := fmt.Sprintf("\n%d %s run: %d passed, %d failed", s.Total, label, s.Passed, s.Failed)
+	if s.Quarantined > 0 {
+		line += fmt.Sprintf(", %d quarantined", s.Quarantined)
+	}
 	if s.Skipped > 0 {
 		line += fmt.Sprintf(", %d skipped", s.Skipped)
 	}

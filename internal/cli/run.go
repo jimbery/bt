@@ -5,14 +5,18 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jayimbery/bt/internal/adapter/openapi"
 	"github.com/jayimbery/bt/internal/config"
+	"github.com/jayimbery/bt/internal/exitcode"
 	"github.com/jayimbery/bt/internal/report"
 	"github.com/jayimbery/bt/internal/runner"
 	"github.com/jayimbery/bt/internal/runplan"
+	"github.com/jayimbery/bt/internal/strategy"
+	"github.com/jayimbery/bt/internal/strategy/contract"
 )
 
 func newRunCmd() *cobra.Command {
@@ -40,17 +44,17 @@ func newRunCmd() *cobra.Command {
 
 			cfg, err := config.Load(cfgPath)
 			if err != nil {
-				return fmt.Errorf("config: %w", err)
+				return exitcode.WrapConfig(fmt.Errorf("config: %w", err))
 			}
 
 			ad := openapi.New()
 			target := cfg.Target.AsModel()
 			if err := ad.Validate(cmd.Context(), target); err != nil {
-				return fmt.Errorf("adapter validate: %w", err)
+				return exitcode.WrapConfig(fmt.Errorf("adapter validate: %w", err))
 			}
 			ops, err := ad.Discover(cmd.Context(), target)
 			if err != nil {
-				return fmt.Errorf("adapter: %w", err)
+				return exitcode.WrapConfig(fmt.Errorf("adapter: %w", err))
 			}
 
 			opt := runplan.BuildOptions{Stderr: cmd.ErrOrStderr()}
@@ -97,12 +101,12 @@ func newRunCmd() *cobra.Command {
 
 			st, spec, err := runplan.BuildStrategyAndSpec(cfgPath, strategyName, cfg, opt)
 			if err != nil {
-				return err
+				return exitcode.WrapConfig(err)
 			}
 
 			cases, err := st.Plan(cmd.Context(), spec, ops)
 			if err != nil {
-				return fmt.Errorf("plan: %w", err)
+				return exitcode.WrapConfig(fmt.Errorf("plan: %w", err))
 			}
 
 			exec := runner.New(runner.Config{
@@ -112,7 +116,28 @@ func newRunCmd() *cobra.Command {
 
 			results, err := st.Execute(cmd.Context(), cases, exec)
 			if err != nil {
-				return fmt.Errorf("execute: %w", err)
+				return exitcode.WrapExecution(fmt.Errorf("execute: %w", err))
+			}
+
+			if strategy.Kind(strategyName) == strategy.KindContract {
+				bp := filepath.Join(filepath.Dir(cfgPath), ".bt", "baseline.yaml")
+				if strings.TrimSpace(cfg.Baseline) != "" {
+					if filepath.IsAbs(cfg.Baseline) {
+						bp = cfg.Baseline
+					} else {
+						bp = filepath.Join(filepath.Dir(cfgPath), cfg.Baseline)
+					}
+				}
+				if _, statErr := os.Stat(bp); statErr == nil {
+					if bl, berr := contract.LoadBaseline(bp); berr == nil {
+						contract.ApplyBaselineToResults(results, bl)
+						for _, r := range results {
+							if r.StaleBaseline {
+								_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: stale baseline entry for operation %q (still listed as quarantined but now passes)\n", r.OperationID)
+							}
+						}
+					}
+				}
 			}
 
 			outPath, err := cmd.Flags().GetString("output-file")
@@ -122,11 +147,11 @@ func newRunCmd() *cobra.Command {
 			reportOut := cmd.OutOrStdout()
 			if outPath != "" {
 				if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
-					return fmt.Errorf("output-file: %w", err)
+					return exitcode.WrapConfig(fmt.Errorf("output-file: %w", err))
 				}
 				f, err := os.Create(outPath)
 				if err != nil {
-					return fmt.Errorf("output-file: %w", err)
+					return exitcode.WrapConfig(fmt.Errorf("output-file: %w", err))
 				}
 				defer func() { _ = f.Close() }()
 				switch outputFormat {
@@ -148,11 +173,11 @@ func newRunCmd() *cobra.Command {
 			}
 
 			if err := rep.Write(results); err != nil {
-				return fmt.Errorf("report: %w", err)
+				return exitcode.WrapConfig(fmt.Errorf("report: %w", err))
 			}
 
 			for _, res := range results {
-				if !res.Passed && !res.Skipped {
+				if !res.Passed && !res.Skipped && !res.Quarantined {
 					return ErrTestFailures
 				}
 			}

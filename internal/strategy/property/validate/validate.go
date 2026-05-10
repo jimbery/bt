@@ -53,6 +53,17 @@ func validateValue(path string, v any, schema *model.SchemaRef) []SchemaViolatio
 	if schema == nil {
 		return nil
 	}
+	if v == nil {
+		if schema.Nullable || schema.Type == "null" {
+			return nil
+		}
+		return []SchemaViolation{{
+			Path:     path,
+			Message:  "unexpected null",
+			Expected: "non-null value",
+			Got:      "null",
+		}}
+	}
 	var out []SchemaViolation
 
 	if len(schema.OneOf) > 0 {
@@ -119,9 +130,7 @@ func validateValue(path string, v any, schema *model.SchemaRef) []SchemaViolatio
 			out = append(out, typeViolation(path, "boolean", fmt.Sprintf("%T", v)))
 		}
 	case "null":
-		if v != nil {
-			out = append(out, SchemaViolation{Path: path, Message: "expected null", Expected: "null", Got: fmt.Sprintf("%v", v)})
-		}
+		out = append(out, SchemaViolation{Path: path, Message: "expected null", Expected: "null", Got: fmt.Sprintf("%v", v)})
 	default:
 		// Unknown composite: best-effort pass.
 	}
@@ -177,10 +186,6 @@ func validateObject(path string, v any, schema *model.SchemaRef) []SchemaViolati
 			continue
 		}
 		childPath := path + "." + k
-		if val == nil && !propSchema.Nullable {
-			out = append(out, SchemaViolation{Path: childPath, Message: "unexpected null", Expected: "non-null", Got: "null"})
-			continue
-		}
 		out = append(out, validateValue(childPath, val, propSchema)...)
 	}
 	return out

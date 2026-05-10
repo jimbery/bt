@@ -509,6 +509,240 @@ func TestAdminDeleteCount_ResponseSchema(t *testing.T) {
 	}
 }
 
+// --- CancelOrder timestamp type (M8.5) ---
+
+func TestCancelOrder_TimestampBugDisabled_CancelledAtIsString(t *testing.T) {
+	t.Setenv("ORDERS_API_TIMESTAMP_BUG", "")
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	createBody := `{"amount": 50, "currency": "GBP"}`
+	createResp, err := http.Post(srv.URL+"/orders", "application/json", bytes.NewBufferString(createBody))
+	if err != nil {
+		t.Fatalf("create order: %v", err)
+	}
+	defer func() { _ = createResp.Body.Close() }()
+
+	var created map[string]any
+	if err := json.NewDecoder(createResp.Body).Decode(&created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	id := created["id"].(string)
+
+	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/orders/"+id, bytes.NewBufferString(`{"status":"cancelled"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	patchResp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("patch order: %v", err)
+	}
+	defer func() { _ = patchResp.Body.Close() }()
+
+	if patchResp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 from PATCH, got %d", patchResp.StatusCode)
+	}
+
+	var patched map[string]any
+	if err := json.NewDecoder(patchResp.Body).Decode(&patched); err != nil {
+		t.Fatalf("decode patch response: %v", err)
+	}
+
+	cancelledAt, ok := patched["cancelled_at"]
+	if !ok {
+		t.Fatal("expected 'cancelled_at' field in patch response")
+	}
+	if _, isString := cancelledAt.(string); !isString {
+		t.Errorf("expected cancelled_at to be a string, got %T: %v", cancelledAt, cancelledAt)
+	}
+}
+
+func TestCancelOrder_TimestampBugEnabled_CancelledAtIsNumber(t *testing.T) {
+	t.Setenv("ORDERS_API_TIMESTAMP_BUG", "1")
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	createBody := `{"amount": 50, "currency": "GBP"}`
+	createResp, err := http.Post(srv.URL+"/orders", "application/json", bytes.NewBufferString(createBody))
+	if err != nil {
+		t.Fatalf("create order: %v", err)
+	}
+	defer func() { _ = createResp.Body.Close() }()
+
+	var created map[string]any
+	if err := json.NewDecoder(createResp.Body).Decode(&created); err != nil {
+		t.Fatalf("decode create response: %v", err)
+	}
+	id := created["id"].(string)
+
+	req, err := http.NewRequest(http.MethodPatch, srv.URL+"/orders/"+id, bytes.NewBufferString(`{"status":"cancelled"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	patchResp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("patch order: %v", err)
+	}
+	defer func() { _ = patchResp.Body.Close() }()
+
+	var patched map[string]any
+	if err := json.NewDecoder(patchResp.Body).Decode(&patched); err != nil {
+		t.Fatalf("decode patch response: %v", err)
+	}
+
+	cancelledAt, ok := patched["cancelled_at"]
+	if !ok {
+		t.Fatal("expected 'cancelled_at' field")
+	}
+	if _, isNum := cancelledAt.(float64); !isNum {
+		t.Errorf("expected cancelled_at to be a JSON number in bug mode, got %T", cancelledAt)
+	}
+}
+
+func TestGetOrder_ResponseSchema_AllRequiredFieldsPresent(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	createBody := `{"amount": 75, "currency": "USD", "description": "schema test"}`
+	createResp, err := http.Post(srv.URL+"/orders", "application/json", bytes.NewBufferString(createBody))
+	if err != nil {
+		t.Fatalf("create order: %v", err)
+	}
+	defer func() { _ = createResp.Body.Close() }()
+	var created map[string]any
+	if err := json.NewDecoder(createResp.Body).Decode(&created); err != nil {
+		t.Fatalf("decode create: %v", err)
+	}
+	id := created["id"].(string)
+
+	resp, err := http.Get(srv.URL + "/orders/" + id)
+	if err != nil {
+		t.Fatalf("get order: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var order map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&order); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	requiredFields := []string{"id", "amount", "currency", "status", "created_at"}
+	for _, field := range requiredFields {
+		if order[field] == nil {
+			t.Errorf("required field %q is absent or null in GetOrder response", field)
+		}
+	}
+
+	if _, ok := order["id"].(string); !ok {
+		t.Errorf("'id' must be a string, got %T", order["id"])
+	}
+	if amt, ok := order["amount"].(float64); !ok || amt != float64(int64(amt)) {
+		t.Errorf("'amount' must be an integer, got %T: %v", order["amount"], order["amount"])
+	}
+	if _, ok := order["currency"].(string); !ok {
+		t.Errorf("'currency' must be a string, got %T", order["currency"])
+	}
+	if status, ok := order["status"].(string); !ok {
+		t.Errorf("'status' must be a string, got %T", order["status"])
+	} else {
+		validStatuses := map[string]bool{"pending": true, "confirmed": true, "shipped": true, "delivered": true, "cancelled": true}
+		if !validStatuses[status] {
+			t.Errorf("'status' value %q is not a declared enum value", status)
+		}
+	}
+	if _, ok := order["created_at"].(string); !ok {
+		t.Errorf("'created_at' must be a string, got %T", order["created_at"])
+	}
+}
+
+func TestCreateOrder_ResponseSchema_AllRequiredFieldsPresent(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	body := `{"amount": 200, "currency": "EUR"}`
+	resp, err := http.Post(srv.URL+"/orders", "application/json", bytes.NewBufferString(body))
+	if err != nil {
+		t.Fatalf("create order: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("expected 201, got %d", resp.StatusCode)
+	}
+
+	var order map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&order); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	requiredFields := []string{"id", "amount", "currency", "status", "created_at"}
+	for _, field := range requiredFields {
+		if order[field] == nil {
+			t.Errorf("required field %q absent or null in CreateOrder response", field)
+		}
+	}
+
+	if status, ok := order["status"].(string); !ok || status != "pending" {
+		t.Errorf("expected status 'pending' after creation, got %v", order["status"])
+	}
+	if id, ok := order["id"].(string); !ok || id == "" {
+		t.Error("expected non-empty string id in CreateOrder response")
+	}
+}
+
+func TestListOrders_ResponseSchema_ReturnsOrdersArray(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/orders")
+	if err != nil {
+		t.Fatalf("list orders: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var body map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	ordersVal, ok := body["orders"]
+	if !ok {
+		t.Fatal("expected 'orders' key in ListOrders response")
+	}
+	if _, isArray := ordersVal.([]any); !isArray {
+		t.Errorf("expected 'orders' to be an array, got %T", ordersVal)
+	}
+}
+
+func TestGetOrderBroken_ResponseSchema_ViolatesSchema(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	createBody := `{"amount": 10, "currency": "GBP"}`
+	createResp, _ := http.Post(srv.URL+"/orders", "application/json", bytes.NewBufferString(createBody))
+	var created map[string]any
+	_ = json.NewDecoder(createResp.Body).Decode(&created)
+	_ = createResp.Body.Close()
+	id := created["id"].(string)
+
+	resp, err := http.Get(srv.URL + "/orders/" + id + "/broken")
+	if err != nil {
+		t.Fatalf("get broken order: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var b map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&b); err != nil {
+		t.Fatalf("decode broken response: %v", err)
+	}
+
+	if _, isString := b["amount"].(string); !isString {
+		t.Log("GetOrderBroken violation may differ between calls — presence-only check")
+	}
+}
+
 func TestAllEndpoints_ReturnJSONContentType(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()

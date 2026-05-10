@@ -33,14 +33,28 @@ func findRepoRoot(t *testing.T) string {
 
 func requireOrdersAPI(t *testing.T) {
 	t.Helper()
-	resp, err := http.Get("http://localhost:8080/health")
-	if err != nil {
-		t.Skip("orders-api not reachable on :8080:", err)
+	bases := []string{}
+	if p := strings.TrimSpace(os.Getenv("PORT")); p != "" {
+		bases = append(bases, "http://127.0.0.1:"+p, "http://localhost:"+p)
 	}
-	_ = resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Skip("orders-api health check returned", resp.StatusCode)
+	bases = append(bases, "http://localhost:8080", "http://127.0.0.1:18080")
+
+	seen := make(map[string]struct{})
+	for _, base := range bases {
+		if _, dup := seen[base]; dup {
+			continue
+		}
+		seen[base] = struct{}{}
+		resp, err := http.Get(base + "/health")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			_ = resp.Body.Close()
+			return
+		}
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
 	}
+	t.Skip("orders-api not reachable (set PORT or start on :8080 or :18080)")
 }
 
 // propertyReport matches the JSON output format from bt run --output json.
@@ -49,21 +63,21 @@ type propertyReport struct {
 }
 
 type propertyResult struct {
-	CaseID        string    `json:"case_id"`
-	StrategyKind  string    `json:"strategy_kind"`
-	Seed          int64     `json:"seed"`
-	CasesRun      int       `json:"cases_run"`
-	ShrinkCount   int       `json:"shrink_count"`
-	Failures      []failure `json:"failures"`
-	ArtifactPath  string    `json:"artifact_path"`
+	CaseID       string    `json:"case_id"`
+	StrategyKind string    `json:"strategy_kind"`
+	Seed         int64     `json:"seed"`
+	CasesRun     int       `json:"cases_run"`
+	ShrinkCount  int       `json:"shrink_count"`
+	Failures     []failure `json:"failures"`
+	ArtifactPath string    `json:"artifact_path"`
 }
 
 type failure struct {
 	Invariant string `json:"invariant"`
 	Message   string `json:"message"`
 	Path      string `json:"path"`
-	Expected  any     `json:"expected"`
-	Actual    any     `json:"actual"`
+	Expected  any    `json:"expected"`
+	Actual    any    `json:"actual"`
 }
 
 func runPropertyTests(t *testing.T) propertyReport {

@@ -11,6 +11,7 @@ import (
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/replay"
 	"github.com/jayimbery/bt/internal/strategy"
+	"github.com/jayimbery/bt/internal/strategy/contract"
 	"github.com/jayimbery/bt/internal/strategy/fuzz"
 	"github.com/jayimbery/bt/internal/strategy/property"
 	"github.com/jayimbery/bt/internal/strategy/table"
@@ -91,6 +92,12 @@ func BuildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, opt 
 			TimeoutSeconds:       cfg.Safety.TimeoutSeconds,
 			DestructiveConfirmed: destructiveConfirmed,
 			Logger:               fuzzLog,
+		})
+	case strategy.KindContract:
+		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
+		st = contract.NewWithOptions(contract.Options{
+			ArtifactWriter: replay.NewWriter(artifactDir),
+			Environment:    cfg.Target.Environment,
 		})
 	default:
 		return nil, strategy.Spec{}, fmt.Errorf("unknown strategy: %q", strategyName)

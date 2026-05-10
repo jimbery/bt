@@ -11,6 +11,7 @@ const (
 	InvariantNo5xx                       = "no_5xx"
 	InvariantResponseMatchesSchema       = "response_matches_schema"
 	InvariantIdempotencyKeyPreventsDupes = "idempotency_key_prevents_duplicates"
+	InvariantContract                    = "contract"
 )
 
 // IdempotencyResult captures two HTTP responses for the same idempotent request pair.
