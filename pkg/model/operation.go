@@ -18,10 +18,10 @@ type Operation struct {
 	RequestBody *SchemaRef     `json:"request_body,omitempty"`
 	Responses   []ResponseSpec `json:"responses,omitempty"`
 
-	GQLKind              GQLOperationKind       `json:"gql_kind,omitempty"`
-	GQLDocument          string                 `json:"gql_document,omitempty"`
-	GQLVariableTypes     map[string]*SchemaRef  `json:"gql_variable_types,omitempty"`
-	GQLSelectionSchema   *SchemaRef             `json:"gql_selection_schema,omitempty"`
+	GQLKind            GQLOperationKind      `json:"gql_kind,omitempty"`
+	GQLDocument        string                `json:"gql_document,omitempty"`
+	GQLVariableTypes   map[string]*SchemaRef `json:"gql_variable_types,omitempty"`
+	GQLSelectionSchema *SchemaRef            `json:"gql_selection_schema,omitempty"`
 }
 
 type Parameter struct {

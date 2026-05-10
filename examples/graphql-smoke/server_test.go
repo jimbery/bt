@@ -37,7 +37,7 @@ func TestGraphqlWidgetAndCreate(t *testing.T) {
 	client := srv.Client()
 
 	payload := map[string]any{
-		"query": `query W($id: ID!) { widget(id: $id) { id name } }`,
+		"query":     `query W($id: ID!) { widget(id: $id) { id name } }`,
 		"variables": map[string]any{"id": "w1"},
 	}
 	b, _ := json.Marshal(payload)
@@ -52,7 +52,7 @@ func TestGraphqlWidgetAndCreate(t *testing.T) {
 	}
 
 	payload2 := map[string]any{
-		"query": `mutation M($name: String!) { createWidget(name: $name) { id name } }`,
+		"query":     `mutation M($name: String!) { createWidget(name: $name) { id name } }`,
 		"variables": map[string]any{"name": "x"},
 	}
 	b2, _ := json.Marshal(payload2)

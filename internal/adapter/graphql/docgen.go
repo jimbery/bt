@@ -58,10 +58,6 @@ func gqlRootKeyword(k model.GQLOperationKind) string {
 	}
 }
 
-func selectionSetString(schema *ast.Schema, def *ast.Definition) (string, error) {
-	return selectionSetStringWithSeen(schema, def, make(map[string]struct{}))
-}
-
 func selectionSetStringWithSeen(schema *ast.Schema, def *ast.Definition, seen map[string]struct{}) (string, error) {
 	switch def.Kind {
 	case ast.Scalar, ast.Enum:

@@ -29,7 +29,7 @@ type widget struct {
 
 var (
 	mu       sync.Mutex
-	widgets  = map[string]widget{"w1": {ID: "w1", Name: "seed"}}
+	widgets        = map[string]widget{"w1": {ID: "w1", Name: "seed"}}
 	idSerial int64 = 1
 )
 

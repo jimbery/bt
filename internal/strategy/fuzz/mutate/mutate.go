@@ -224,13 +224,16 @@ func (headerMutator) Mutate(seed Input, r *rand.Rand) Input {
 			k := keys[r.Intn(len(keys))]
 			in.Headers[k] = strings.Repeat("H", 8192)
 		case 3:
+			// Splice extra tokens into the value. Must not insert CR/LF — net/http rejects
+			// those before the request is sent, which turns fuzz into client-side "crash"
+			// noise instead of exercising the server.
 			k := keys[r.Intn(len(keys))]
 			v := in.Headers[k]
 			if len(v) == 0 {
 				v = "x"
 			}
 			pos := r.Intn(len(v) + 1)
-			in.Headers[k] = v[:pos] + "\r\n" + v[pos:]
+			in.Headers[k] = v[:pos] + "\t;fuzz=" + strings.Repeat("z", r.Intn(32)+1) + v[pos:]
 		case 4:
 			k := keys[r.Intn(len(keys))]
 			in.Headers[k] = in.Headers[k] + "fuzz"

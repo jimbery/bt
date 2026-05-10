@@ -38,7 +38,7 @@ func AssertResponse(body []byte, op model.Operation) []AssertionFailure {
 	if _, has := obj["data"]; !has {
 		return append(out, AssertionFailure{Field: "data", Message: `response must include a "data" key`, Severity: Critical})
 	}
-	dataVal, _ := obj["data"]
+	dataVal := obj["data"]
 
 	if errsRaw, has := obj["errors"]; has && errsRaw != nil {
 		if errs, ok := errsRaw.([]any); ok && len(errs) > 0 {

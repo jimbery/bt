@@ -137,14 +137,14 @@ func operationFromField(schema *ast.Schema, field *ast.FieldDefinition, gk model
 		return model.Operation{}, err
 	}
 	return model.Operation{
-		ID:                   field.Name,
-		Method:               http.MethodPost,
-		Path:                 httpPath,
-		GQLKind:              gk,
-		GQLDocument:          doc,
-		GQLVariableTypes:     varTypes,
-		GQLSelectionSchema:   selSchema,
-		Responses:            []model.ResponseSpec{{StatusCode: 200, Schema: env}},
+		ID:                 field.Name,
+		Method:             http.MethodPost,
+		Path:               httpPath,
+		GQLKind:            gk,
+		GQLDocument:        doc,
+		GQLVariableTypes:   varTypes,
+		GQLSelectionSchema: selSchema,
+		Responses:          []model.ResponseSpec{{StatusCode: 200, Schema: env}},
 	}, nil
 }
 

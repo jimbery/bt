@@ -24,13 +24,13 @@ type Config struct {
 }
 
 type TargetConfig struct {
-	Name         string     `mapstructure:"name"`
-	BaseURL      string     `mapstructure:"base_url"`
-	SchemaPath   string     `mapstructure:"schema"`
-	Adapter      string     `mapstructure:"adapter"`
-	GraphQLPath  string     `mapstructure:"graphql_path"`
-	Environment  string     `mapstructure:"environment"`
-	Auth         AuthConfig `mapstructure:"auth"`
+	Name        string     `mapstructure:"name"`
+	BaseURL     string     `mapstructure:"base_url"`
+	SchemaPath  string     `mapstructure:"schema"`
+	Adapter     string     `mapstructure:"adapter"`
+	GraphQLPath string     `mapstructure:"graphql_path"`
+	Environment string     `mapstructure:"environment"`
+	Auth        AuthConfig `mapstructure:"auth"`
 }
 
 type AuthConfig struct {
@@ -115,12 +115,12 @@ func (t TargetConfig) AsModel() model.Target {
 		gqlPath = "/graphql"
 	}
 	return model.Target{
-		Name:         t.Name,
-		BaseURL:      t.BaseURL,
-		SchemaPath:   t.SchemaPath,
-		Adapter:      adapter,
-		GraphQLPath:  gqlPath,
-		Environment:  t.Environment,
+		Name:        t.Name,
+		BaseURL:     t.BaseURL,
+		SchemaPath:  t.SchemaPath,
+		Adapter:     adapter,
+		GraphQLPath: gqlPath,
+		Environment: t.Environment,
 		Auth: model.AuthConfig{
 			Type: t.Auth.Type,
 			Env:  t.Auth.Env,

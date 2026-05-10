@@ -196,24 +196,16 @@ func TestHeaderMutator_OversizedValue_Produces8192CharValue(t *testing.T) {
 	}
 }
 
-func TestHeaderMutator_InjectNewline_ProducesNewlineInValue(t *testing.T) {
+func TestHeaderMutator_HeaderValuesNeverContainCRLF(t *testing.T) {
 	m := mutate.NewHeaderMutator()
 	input := validJSONInput()
-	found := false
-	for seed := int64(0); seed < 50; seed++ {
+	for seed := int64(0); seed < 80; seed++ {
 		result := m.Mutate(input, rng(seed))
-		for _, v := range result.Headers {
-			if strings.Contains(v, "\r\n") {
-				found = true
-				break
+		for hk, v := range result.Headers {
+			if strings.ContainsAny(v, "\r\n") {
+				t.Fatalf("header %q value must not contain CR or LF (breaks net/http); seed=%d value=%q", hk, seed, v)
 			}
 		}
-		if found {
-			break
-		}
-	}
-	if !found {
-		t.Error("HeaderMutator never injected \\r\\n into a header value over 50 seeds")
 	}
 }
 

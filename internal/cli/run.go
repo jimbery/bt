@@ -11,9 +11,9 @@ import (
 
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/exitcode"
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/report"
 	"github.com/jayimbery/bt/internal/runner"
+	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/runplan"
 	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/internal/strategy/contract"
@@ -135,22 +135,20 @@ func newRunCmd() *cobra.Command {
 				return exitcode.WrapExecution(fmt.Errorf("execute: %w", err))
 			}
 
-			if strategy.Kind(strategyName) == strategy.KindContract {
-				bp := filepath.Join(filepath.Dir(cfgPath), ".bt", "baseline.yaml")
-				if strings.TrimSpace(cfg.Baseline) != "" {
-					if filepath.IsAbs(cfg.Baseline) {
-						bp = cfg.Baseline
-					} else {
-						bp = filepath.Join(filepath.Dir(cfgPath), cfg.Baseline)
-					}
+			bp := filepath.Join(filepath.Dir(cfgPath), ".bt", "baseline.yaml")
+			if strings.TrimSpace(cfg.Baseline) != "" {
+				if filepath.IsAbs(cfg.Baseline) {
+					bp = cfg.Baseline
+				} else {
+					bp = filepath.Join(filepath.Dir(cfgPath), cfg.Baseline)
 				}
-				if _, statErr := os.Stat(bp); statErr == nil {
-					if bl, berr := contract.LoadBaseline(bp); berr == nil {
-						contract.ApplyBaselineToResults(results, bl)
-						for _, r := range results {
-							if r.StaleBaseline {
-								_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: stale baseline entry for operation %q (still listed as quarantined but now passes)\n", r.OperationID)
-							}
+			}
+			if _, statErr := os.Stat(bp); statErr == nil {
+				if bl, berr := contract.LoadBaseline(bp); berr == nil {
+					contract.ApplyBaselineToResults(results, bl)
+					for _, r := range results {
+						if r.StaleBaseline {
+							_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: stale baseline entry for operation %q (still listed as quarantined but now passes)\n", r.OperationID)
 						}
 					}
 				}

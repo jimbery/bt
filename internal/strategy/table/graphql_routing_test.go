@@ -91,8 +91,8 @@ func TestTableStrategy_RESTCase_NotRoutedToGQLExecutor(t *testing.T) {
 	s := table.NewWithOptions(table.Options{GQLExecutor: gqlExec})
 	cases := []model.Case{
 		{
-			ID:    "rest-get",
-			Input: model.CaseInput{Method: "GET", Path: "/orders"},
+			ID:       "rest-get",
+			Input:    model.CaseInput{Method: "GET", Path: "/orders"},
 			Expected: &model.CaseExpectation{StatusCode: 200},
 		},
 	}

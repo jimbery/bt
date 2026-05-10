@@ -146,14 +146,14 @@ func introRootFields(typesByName map[string]map[string]any, typeRef map[string]a
 			return nil, err
 		}
 		out = append(out, model.Operation{
-			ID:                   fname,
-			Method:               http.MethodPost,
-			Path:                 httpPath,
-			GQLKind:              gk,
-			GQLDocument:          doc,
-			GQLVariableTypes:     varTypes,
-			GQLSelectionSchema:   sel,
-			Responses:            []model.ResponseSpec{{StatusCode: 200, Schema: env}},
+			ID:                 fname,
+			Method:             http.MethodPost,
+			Path:               httpPath,
+			GQLKind:            gk,
+			GQLDocument:        doc,
+			GQLVariableTypes:   varTypes,
+			GQLSelectionSchema: sel,
+			Responses:          []model.ResponseSpec{{StatusCode: 200, Schema: env}},
 		})
 	}
 	return out, nil

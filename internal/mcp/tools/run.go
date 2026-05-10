@@ -10,8 +10,8 @@ import (
 
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/mcp/registry"
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/runner"
+	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/runplan"
 	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/pkg/model"

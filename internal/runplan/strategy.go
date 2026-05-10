@@ -74,7 +74,7 @@ func BuildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, opt 
 		st = table.NewWithOptions(table.Options{
 			ArtifactWriter: replay.NewWriter(artifactDir),
 			Environment:    cfg.Target.Environment,
-			GQLExecutor:      opt.GQLExecutor,
+			GQLExecutor:    opt.GQLExecutor,
 		})
 	case strategy.KindProperty:
 		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
