@@ -35,6 +35,7 @@ run-bt-orders-property: bt
 # One-shot: build, start orders-api in the background, run table + property + fuzz (matches CI smoke), then stop the API.
 run-integration-local: bt orders-api
 	set -e; \
+	command -v jq >/dev/null 2>&1 || { echo "error: jq is required for make integration (e.g. brew install jq)" >&2; exit 1; }; \
 	./orders-api & pid=$$!; \
 	trap 'kill $$pid 2>/dev/null || true' EXIT; \
 	for i in $$(seq 1 30); do \
@@ -42,6 +43,7 @@ run-integration-local: bt orders-api
 		sleep 0.2; \
 	done; \
 	curl -sf http://localhost:$${PORT:-8080}/health >/dev/null; \
+	./bt validate --config examples/orders-api/bt/backendtest.yaml --output json | jq -e '.valid == true' >/dev/null; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy fuzz --safety safe --fuzz-iterations 20
