@@ -78,6 +78,9 @@ func (r *junitReporter) Write(results []model.Result) error {
 				}
 				msgs += fmt.Sprintf("%s: %s\n", label, f.Message)
 			}
+			if len(res.Response.Body) > 0 {
+				msgs += "\n--- response body ---\n" + FailureBodyForDisplay(res.Response.Body) + "\n"
+			}
 			tc.Failure = &JUnitFailure{
 				Message: res.Failures[0].Message,
 				Text:    msgs,

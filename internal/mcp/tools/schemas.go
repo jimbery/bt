@@ -94,7 +94,7 @@ var inputRun = json.RawMessage(`{
     },
     "strategy": {
       "type": "string",
-      "enum": ["table", "property", "fuzz"],
+      "enum": ["table", "property", "fuzz", "contract", "all"],
       "description": "Strategy to run. Defaults to the first strategy in the config if omitted."
     },
     "seed": {

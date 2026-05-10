@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jayimbery/bt/internal/gqlcase"
 	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/internal/strategy/property/gen"
 	"github.com/jayimbery/bt/pkg/model"
@@ -224,6 +225,9 @@ func violationsToFailures(vv []ContractViolation) []model.Failure {
 }
 
 func buildMinimalInput(op model.Operation) model.CaseInput {
+	if gqlcase.IsGraphQLOperation(op) {
+		return gqlcase.MinimalInput(op)
+	}
 	in := model.CaseInput{
 		Method:  op.Method,
 		Path:    fillPathParams(op),

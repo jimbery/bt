@@ -84,6 +84,9 @@ func AssertResponse(body []byte, op model.Operation) []AssertionFailure {
 
 	if op.GQLSelectionSchema != nil && dataVal != nil {
 		payload := graphqlDataPayload(dataVal, op.ID)
+		if payload == nil {
+			return out
+		}
 		switch v := payload.(type) {
 		case map[string]any:
 			for _, cv := range contract.EvaluateBody(v, op.GQLSelectionSchema) {

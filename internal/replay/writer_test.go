@@ -12,6 +12,16 @@ import (
 	"github.com/jayimbery/bt/pkg/model"
 )
 
+func jsonBytesEqual(a, b []byte) bool {
+	var av, bv any
+	if json.Unmarshal(a, &av) != nil || json.Unmarshal(b, &bv) != nil {
+		return string(a) == string(b)
+	}
+	ja, _ := json.Marshal(av)
+	jb, _ := json.Marshal(bv)
+	return string(ja) == string(jb)
+}
+
 func sampleArtifact() model.Artifact {
 	return model.Artifact{
 		ID:           "artifact-001",
@@ -148,14 +158,17 @@ func TestWriter_ArtifactRoundTrip(t *testing.T) {
 	if decoded.Request.Method != original.Request.Method {
 		t.Errorf("Request.Method: got %q, want %q", decoded.Request.Method, original.Request.Method)
 	}
-	if string(decoded.Request.Body) != string(original.Request.Body) {
-		t.Errorf("Request.Body: got %s, want %s", decoded.Request.Body, original.Request.Body)
+	if !jsonBytesEqual(decoded.Request.Body, original.Request.Body) {
+		t.Errorf("Request.Body JSON: got %s, want %s", decoded.Request.Body, original.Request.Body)
 	}
 	if decoded.Response.StatusCode != original.Response.StatusCode {
 		t.Errorf("Response.StatusCode: got %d, want %d", decoded.Response.StatusCode, original.Response.StatusCode)
 	}
 	if len(decoded.Failures) != len(original.Failures) {
 		t.Errorf("Failures length: got %d, want %d", len(decoded.Failures), len(original.Failures))
+	}
+	if !jsonBytesEqual(decoded.Response.Body, original.Response.Body) {
+		t.Errorf("Response.Body JSON: got %s, want %s", decoded.Response.Body, original.Response.Body)
 	}
 }
 

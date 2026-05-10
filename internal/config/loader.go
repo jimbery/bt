@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -94,12 +95,32 @@ func applyDefaults(v *viper.Viper) {
 	v.SetDefault("safety.profile", "safe")
 }
 
+var envVarNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+
 func validate(cfg *Config) error {
 	if cfg.Target.Name == "" {
 		return errors.New("validation error: target.name is required (this file must be a bt config with `target.name`, `target.base_url`, and `target.schema`; a standalone OpenAPI document is not valid here — see testdata/backendtest.yaml)")
 	}
 	if cfg.Target.BaseURL == "" {
 		return errors.New("validation error: target.base_url is required")
+	}
+	if err := validateBearerAuthEnvName(cfg); err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateBearerAuthEnvName(cfg *Config) error {
+	t := strings.ToLower(strings.TrimSpace(cfg.Target.Auth.Type))
+	if t != "bearer" {
+		return nil
+	}
+	env := strings.TrimSpace(cfg.Target.Auth.Env)
+	if env == "" {
+		return nil
+	}
+	if !envVarNamePattern.MatchString(env) {
+		return fmt.Errorf(`validation error: target.auth.env must be an environment variable name (e.g. SUBCONTRACTOR_API_TOKEN), not the secret or token literal; set the token in that variable and use "bt run --load-dotenv" or export it before running`)
 	}
 	return nil
 }

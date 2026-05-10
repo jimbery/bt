@@ -305,6 +305,9 @@ func TestResult_JSONRoundTrip(t *testing.T) {
 	if decoded.ShrinkCount != original.ShrinkCount {
 		t.Errorf("ShrinkCount: got %d, want %d", decoded.ShrinkCount, original.ShrinkCount)
 	}
+	if string(decoded.Response.Body) != string(original.Response.Body) {
+		t.Errorf("Response.Body: got %q, want %q", decoded.Response.Body, original.Response.Body)
+	}
 }
 
 func TestArtifact_JSONRoundTrip(t *testing.T) {

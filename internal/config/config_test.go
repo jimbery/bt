@@ -155,6 +155,28 @@ safety:
 	}
 }
 
+func TestLoad_InvalidBearerAuthEnvNotEnvVarName(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	path := filepath.Join(dir, "backendtest.yaml")
+	yaml := `version: 1
+target:
+  name: orders-api
+  base_url: https://staging.example.com
+  schema: ./openapi.yaml
+  auth:
+    type: bearer
+    env: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30
+`
+	if err := os.WriteFile(path, []byte(yaml), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := config.Load(path)
+	if err == nil {
+		t.Fatal("expected validation error for bearer auth env that is not an env var name")
+	}
+}
+
 func TestScaffold_CreatesParentDirs(t *testing.T) {
 	t.Parallel()
 	base := t.TempDir()

@@ -12,11 +12,9 @@ import (
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/exitcode"
 	"github.com/jayimbery/bt/internal/report"
-	"github.com/jayimbery/bt/internal/runner"
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/runplan"
-	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/internal/strategy/contract"
+	"github.com/jayimbery/bt/pkg/model"
 )
 
 func newRunCmd() *cobra.Command {
@@ -37,6 +35,11 @@ func newRunCmd() *cobra.Command {
 			if strategyName == "" {
 				strategyName = "table"
 			}
+			runAll := strings.EqualFold(strings.TrimSpace(strategyName), "all")
+			strategyList := []string{strategyName}
+			if runAll {
+				strategyList = []string{"table", "property", "fuzz", "contract"}
+			}
 			outputFormat, err := cmd.Flags().GetString("output")
 			if err != nil {
 				return err
@@ -45,6 +48,31 @@ func newRunCmd() *cobra.Command {
 			cfg, err := config.Load(cfgPath)
 			if err != nil {
 				return exitcode.WrapConfig(fmt.Errorf("config: %w", err))
+			}
+
+			loadDotenv, err := cmd.Flags().GetBool("load-dotenv")
+			if err != nil {
+				return err
+			}
+			if loadDotenv {
+				cfgDir := filepath.Dir(cfgPath)
+				for _, p := range []string{
+					filepath.Join(cfgDir, ".env"),
+					filepath.Join(cfgDir, "..", ".env"),
+					".env",
+				} {
+					if err := config.LoadDotEnvFile(p); err != nil {
+						return exitcode.WrapConfig(fmt.Errorf("load-dotenv %q: %w", p, err))
+					}
+				}
+			}
+
+			if strings.EqualFold(strings.TrimSpace(cfg.Target.Auth.Type), "bearer") {
+				env := strings.TrimSpace(cfg.Target.Auth.Env)
+				if env != "" && strings.TrimSpace(os.Getenv(env)) == "" {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(),
+						"warning: target.auth bearer uses env %q but it is not set or empty in this process — Authorization will not be sent (hint: pass --load-dotenv to read .env next to the config file)\n", env)
+				}
 			}
 
 			adapterName := strings.TrimSpace(cfg.Target.Adapter)
@@ -67,12 +95,6 @@ func newRunCmd() *cobra.Command {
 			}
 
 			opt := runplan.BuildOptions{Stderr: cmd.ErrOrStderr()}
-			if strategy.Kind(strategyName) == strategy.KindTable && strings.EqualFold(adapterName, "graphql") {
-				opt.GQLExecutor = gqlrunner.New(gqlrunner.Config{
-					BaseURL: target.BaseURL,
-					Timeout: runner.DefaultTimeout,
-				})
-			}
 			if cmd.Flags().Changed("safety") {
 				v, err := cmd.Flags().GetString("safety")
 				if err != nil {
@@ -114,25 +136,33 @@ func newRunCmd() *cobra.Command {
 				opt.CorpusDir = dir
 			}
 
-			st, spec, err := runplan.BuildStrategyAndSpec(cfgPath, strategyName, cfg, opt)
-			if err != nil {
-				return exitcode.WrapConfig(err)
-			}
+			exec := runplan.BuildDefaultExecutor(cfg, adapterName)
 
-			cases, err := st.Plan(cmd.Context(), spec, ops)
-			if err != nil {
-				return exitcode.WrapConfig(fmt.Errorf("plan: %w", err))
-			}
-			runplan.AttachResolvedOperations(cases, ops)
+			var results []model.Result
+			for _, stratName := range strategyList {
+				if runAll {
+					_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "\n== strategy: %s ==\n", stratName)
+				}
+				st, spec, err := runplan.BuildStrategyAndSpec(cfgPath, stratName, cfg, opt)
+				if err != nil {
+					if runAll && strings.Contains(err.Error(), "no strategy of type") {
+						_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "skip %s: %v\n", stratName, err)
+						continue
+					}
+					return exitcode.WrapConfig(err)
+				}
 
-			exec := runner.New(runner.Config{
-				BaseURL: cfg.Target.BaseURL,
-				Timeout: runner.DefaultTimeout,
-			})
+				cases, err := st.Plan(cmd.Context(), spec, ops)
+				if err != nil {
+					return exitcode.WrapConfig(fmt.Errorf("plan (%s): %w", stratName, err))
+				}
+				runplan.AttachResolvedOperations(cases, ops)
 
-			results, err := st.Execute(cmd.Context(), cases, exec)
-			if err != nil {
-				return exitcode.WrapExecution(fmt.Errorf("execute: %w", err))
+				part, err := st.Execute(cmd.Context(), cases, exec)
+				if err != nil {
+					return exitcode.WrapExecution(fmt.Errorf("execute (%s): %w", stratName, err))
+				}
+				results = append(results, part...)
 			}
 
 			bp := filepath.Join(filepath.Dir(cfgPath), ".bt", "baseline.yaml")
@@ -206,5 +236,6 @@ func newRunCmd() *cobra.Command {
 	cmd.Flags().String("safety", "", "safety profile override for fuzz strategy: safe, aggressive, destructive")
 	cmd.Flags().Int("fuzz-iterations", 0, "max HTTP attempts per operation for fuzz strategy (0 = use config or default 50)")
 	cmd.Flags().String("corpus-dir", "", "corpus directory for fuzz seeds (default: <config-dir>/corpus)")
+	cmd.Flags().Bool("load-dotenv", false, "before resolving target.auth, load unset keys from .env files (<config-dir>/.env, parent/.env, ./.env); never overrides existing environment variables")
 	return cmd
 }

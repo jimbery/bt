@@ -60,6 +60,11 @@ func classifyCore(status int, body []byte, err error, op model.Operation) Classi
 		}
 	}
 	if len(op.Responses) > 0 && !statusDeclared(op, status) {
+		// GraphQL is always POST to a single path; path/query fuzz mutations often yield
+		// 404/405 that are not modeled as alternate response codes on the operation.
+		if strings.TrimSpace(op.GQLDocument) != "" && (status == http.StatusNotFound || status == http.StatusMethodNotAllowed || status == http.StatusBadRequest || status == http.StatusUnsupportedMediaType) {
+			return ClassificationPass
+		}
 		return ClassificationUnexpectedStatus
 	}
 	return ClassificationPass

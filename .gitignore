@@ -5,6 +5,7 @@ dist/
 
 # Runtime artifacts
 .bt/
+**/.bt/
 /corpus/
 testdata/rapid/
 

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jayimbery/bt/internal/gqlcase"
 	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/internal/strategy/fuzz/classify"
 	"github.com/jayimbery/bt/internal/strategy/fuzz/corpus"
@@ -160,12 +161,18 @@ func (s *fuzzStrategy) runOneOperation(ctx context.Context, exec strategy.Execut
 		seeds = builtinSeedCorpus(enf, op)
 	}
 
-	ms := mutate.NewMutatorSet(
-		mutate.NewPayloadMutator(),
-		mutate.NewHeaderMutator(),
-		mutate.NewPathMutator(),
-		mutate.NewQueryMutator(),
-	)
+	var muts []mutate.Mutator
+	if gqlcase.IsGraphQLOperation(op) {
+		muts = []mutate.Mutator{mutate.NewPayloadMutator()}
+	} else {
+		muts = []mutate.Mutator{
+			mutate.NewPayloadMutator(),
+			mutate.NewHeaderMutator(),
+			mutate.NewPathMutator(),
+			mutate.NewQueryMutator(),
+		}
+	}
+	ms := mutate.NewMutatorSet(muts...)
 
 	texec := &timeoutExecutor{inner: exec, d: enf.RequestTimeout()}
 	var failures []model.Failure
@@ -280,6 +287,14 @@ func mergeSeedWithOperation(seed mutate.Input, op model.Operation) mutate.Input 
 	if out.Headers == nil {
 		out.Headers = map[string]string{}
 	}
+	if gqlcase.IsGraphQLOperation(op) {
+		if strings.TrimSpace(out.GQLQuery) == "" {
+			out.GQLQuery = op.GQLDocument
+		}
+		if out.GQLVariables == nil && len(op.GQLVariableTypes) > 0 {
+			out.GQLVariables = gqlcase.ExampleVariables(op)
+		}
+	}
 	return out
 }
 
@@ -288,6 +303,23 @@ func mergeSeedWithOperation(seed mutate.Input, op model.Operation) mutate.Input 
 // defines — sending POST/PATCH to a GET-only path produces 405s that are noise for
 // this strategy and break CI smoke runs.
 func builtinSeedCorpus(enf *safety.Enforcer, op model.Operation) []mutate.Input {
+	if gqlcase.IsGraphQLOperation(op) {
+		m := strings.ToUpper(strings.TrimSpace(op.Method))
+		if m == "" {
+			m = "POST"
+		}
+		if !enf.Allow(m) {
+			return nil
+		}
+		in := mutate.Input{
+			Method:       m,
+			Path:         fillPathParams(op),
+			Headers:      map[string]string{"Content-Type": "application/json"},
+			GQLQuery:     op.GQLDocument,
+			GQLVariables: gqlcase.ExampleVariables(op),
+		}
+		return []mutate.Input{in}
+	}
 	path := fillPathParams(op)
 	m := strings.ToUpper(strings.TrimSpace(op.Method))
 	if m == "" {

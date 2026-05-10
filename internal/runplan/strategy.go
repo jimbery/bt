@@ -72,9 +72,11 @@ func BuildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, opt 
 	case strategy.KindTable:
 		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
 		st = table.NewWithOptions(table.Options{
-			ArtifactWriter: replay.NewWriter(artifactDir),
-			Environment:    cfg.Target.Environment,
-			GQLExecutor:    opt.GQLExecutor,
+			ArtifactWriter:   replay.NewWriter(artifactDir),
+			Environment:      cfg.Target.Environment,
+			GQLExecutor:      opt.GQLExecutor,
+			DefaultHeaders:   config.RequestHeaderOverrides(cfg.Target.Auth),
+			AuthDebugEnvName: strings.TrimSpace(cfg.Target.Auth.Env),
 		})
 	case strategy.KindProperty:
 		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")

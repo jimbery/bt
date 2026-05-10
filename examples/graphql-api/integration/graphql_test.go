@@ -30,8 +30,8 @@ type GraphQLRunResult struct {
 			Path      string `json:"path"`
 		} `json:"failures"`
 		Response struct {
-			StatusCode int    `json:"status_code"`
-			Body       string `json:"body"`
+			StatusCode int             `json:"status_code"`
+			Body       json.RawMessage `json:"body"` // object when JSON (GraphQL); string for raw non-JSON bodies
 		} `json:"response"`
 	} `json:"results"`
 }
