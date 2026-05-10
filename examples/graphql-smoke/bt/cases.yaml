@@ -1,0 +1,33 @@
+cases:
+  - id: gql-ping
+    operation_id: ping
+    input:
+      method: POST
+      path: /graphql
+      gql_query: "{ ping }"
+    expected:
+      status_code: 200
+
+  - id: gql-widget
+    operation_id: widget
+    input:
+      method: POST
+      path: /graphql
+      gql_query: 'query W($id: ID!) { widget(id: $id) { id name } }'
+      gql_operation_name: W
+      gql_variables:
+        id: "w1"
+    expected:
+      status_code: 200
+
+  - id: gql-create-widget
+    operation_id: createWidget
+    input:
+      method: POST
+      path: /graphql
+      gql_query: 'mutation M($name: String!) { createWidget(name: $name) { id name } }'
+      gql_operation_name: M
+      gql_variables:
+        name: "from-bt"
+    expected:
+      status_code: 200

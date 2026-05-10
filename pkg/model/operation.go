@@ -1,5 +1,14 @@
 package model
 
+// GQLOperationKind classifies a GraphQL root field operation.
+type GQLOperationKind string
+
+const (
+	GQLQuery        GQLOperationKind = "Query"
+	GQLMutation     GQLOperationKind = "Mutation"
+	GQLSubscription GQLOperationKind = "Subscription"
+)
+
 type Operation struct {
 	ID          string         `json:"id"`
 	Method      string         `json:"method"`
@@ -8,6 +17,11 @@ type Operation struct {
 	Parameters  []Parameter    `json:"parameters,omitempty"`
 	RequestBody *SchemaRef     `json:"request_body,omitempty"`
 	Responses   []ResponseSpec `json:"responses,omitempty"`
+
+	GQLKind            GQLOperationKind      `json:"gql_kind,omitempty"`
+	GQLDocument        string                `json:"gql_document,omitempty"`
+	GQLVariableTypes   map[string]*SchemaRef `json:"gql_variable_types,omitempty"`
+	GQLSelectionSchema *SchemaRef            `json:"gql_selection_schema,omitempty"`
 }
 
 type Parameter struct {

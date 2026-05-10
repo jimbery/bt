@@ -242,6 +242,7 @@ outer:
 	passed := len(failures) == 0
 	res := model.Result{
 		CaseID:        c.ID,
+		OperationID:   c.OperationID,
 		Passed:        passed,
 		StrategyKind:  string(strategy.KindFuzz),
 		MutationCount: reqCount,

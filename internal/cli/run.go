@@ -9,11 +9,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jayimbery/bt/internal/adapter/openapi"
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/exitcode"
 	"github.com/jayimbery/bt/internal/report"
 	"github.com/jayimbery/bt/internal/runner"
+	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/runplan"
 	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/internal/strategy/contract"
@@ -47,8 +47,17 @@ func newRunCmd() *cobra.Command {
 				return exitcode.WrapConfig(fmt.Errorf("config: %w", err))
 			}
 
-			ad := openapi.New()
+			adapterName := strings.TrimSpace(cfg.Target.Adapter)
+			if cmd.Root().PersistentFlags().Changed("adapter") {
+				v, err := cmd.Root().PersistentFlags().GetString("adapter")
+				if err != nil {
+					return err
+				}
+				adapterName = strings.TrimSpace(v)
+			}
+
 			target := cfg.Target.AsModel()
+			ad := runplan.AdapterForName(adapterName)
 			if err := ad.Validate(cmd.Context(), target); err != nil {
 				return exitcode.WrapConfig(fmt.Errorf("adapter validate: %w", err))
 			}
@@ -58,6 +67,12 @@ func newRunCmd() *cobra.Command {
 			}
 
 			opt := runplan.BuildOptions{Stderr: cmd.ErrOrStderr()}
+			if strategy.Kind(strategyName) == strategy.KindTable && strings.EqualFold(adapterName, "graphql") {
+				opt.GQLExecutor = gqlrunner.New(gqlrunner.Config{
+					BaseURL: target.BaseURL,
+					Timeout: runner.DefaultTimeout,
+				})
+			}
 			if cmd.Flags().Changed("safety") {
 				v, err := cmd.Flags().GetString("safety")
 				if err != nil {
@@ -108,6 +123,7 @@ func newRunCmd() *cobra.Command {
 			if err != nil {
 				return exitcode.WrapConfig(fmt.Errorf("plan: %w", err))
 			}
+			runplan.AttachResolvedOperations(cases, ops)
 
 			exec := runner.New(runner.Config{
 				BaseURL: cfg.Target.BaseURL,
@@ -119,22 +135,20 @@ func newRunCmd() *cobra.Command {
 				return exitcode.WrapExecution(fmt.Errorf("execute: %w", err))
 			}
 
-			if strategy.Kind(strategyName) == strategy.KindContract {
-				bp := filepath.Join(filepath.Dir(cfgPath), ".bt", "baseline.yaml")
-				if strings.TrimSpace(cfg.Baseline) != "" {
-					if filepath.IsAbs(cfg.Baseline) {
-						bp = cfg.Baseline
-					} else {
-						bp = filepath.Join(filepath.Dir(cfgPath), cfg.Baseline)
-					}
+			bp := filepath.Join(filepath.Dir(cfgPath), ".bt", "baseline.yaml")
+			if strings.TrimSpace(cfg.Baseline) != "" {
+				if filepath.IsAbs(cfg.Baseline) {
+					bp = cfg.Baseline
+				} else {
+					bp = filepath.Join(filepath.Dir(cfgPath), cfg.Baseline)
 				}
-				if _, statErr := os.Stat(bp); statErr == nil {
-					if bl, berr := contract.LoadBaseline(bp); berr == nil {
-						contract.ApplyBaselineToResults(results, bl)
-						for _, r := range results {
-							if r.StaleBaseline {
-								_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: stale baseline entry for operation %q (still listed as quarantined but now passes)\n", r.OperationID)
-							}
+			}
+			if _, statErr := os.Stat(bp); statErr == nil {
+				if bl, berr := contract.LoadBaseline(bp); berr == nil {
+					contract.ApplyBaselineToResults(results, bl)
+					for _, r := range results {
+						if r.StaleBaseline {
+							_, _ = fmt.Fprintf(cmd.ErrOrStderr(), "warning: stale baseline entry for operation %q (still listed as quarantined but now passes)\n", r.OperationID)
 						}
 					}
 				}

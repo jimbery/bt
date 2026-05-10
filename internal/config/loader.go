@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 
@@ -26,6 +27,8 @@ type TargetConfig struct {
 	Name        string     `mapstructure:"name"`
 	BaseURL     string     `mapstructure:"base_url"`
 	SchemaPath  string     `mapstructure:"schema"`
+	Adapter     string     `mapstructure:"adapter"`
+	GraphQLPath string     `mapstructure:"graphql_path"`
 	Environment string     `mapstructure:"environment"`
 	Auth        AuthConfig `mapstructure:"auth"`
 }
@@ -103,10 +106,20 @@ func validate(cfg *Config) error {
 
 // AsModel converts the loaded target configuration into a domain Target.
 func (t TargetConfig) AsModel() model.Target {
+	adapter := strings.TrimSpace(t.Adapter)
+	if adapter == "" {
+		adapter = "openapi"
+	}
+	gqlPath := strings.TrimSpace(t.GraphQLPath)
+	if gqlPath == "" {
+		gqlPath = "/graphql"
+	}
 	return model.Target{
 		Name:        t.Name,
 		BaseURL:     t.BaseURL,
 		SchemaPath:  t.SchemaPath,
+		Adapter:     adapter,
+		GraphQLPath: gqlPath,
 		Environment: t.Environment,
 		Auth: model.AuthConfig{
 			Type: t.Auth.Type,

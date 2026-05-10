@@ -178,6 +178,7 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 	}
 	final := model.Result{
 		CaseID:       c.ID,
+		OperationID:  c.OperationID,
 		StatusCode:   resp.StatusCode,
 		Duration:     dur,
 		Response:     resp,
