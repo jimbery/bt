@@ -163,6 +163,12 @@ func normaliseSchemaFromBase(s *base.Schema, depth int, seen map[*base.Schema]st
 		}
 		ref.AnyOf = append(ref.AnyOf, normaliseSchemaFromProxy(child, depth+1, seen))
 	}
+	if s.AdditionalProperties != nil {
+		if s.AdditionalProperties.IsB() {
+			b := s.AdditionalProperties.B
+			ref.AdditionalProperties = &b
+		}
+	}
 	return ref
 }
 

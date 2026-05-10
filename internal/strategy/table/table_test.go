@@ -244,6 +244,111 @@ func TestTableStrategy_Execute_RecordsRequestAndResponse(t *testing.T) {
 	}
 }
 
+func TestTableStrategy_Plan_LoadsExpectedSchema(t *testing.T) {
+	t.Parallel()
+	yaml := `
+cases:
+  - id: with-schema
+    operation_id: GetOrder
+    input:
+      method: GET
+      path: /orders/1
+    expected:
+      status_code: 200
+      schema:
+        type: object
+        required: [id]
+        properties:
+          id:
+            type: string
+`
+	path := writeCaseFile(t, yaml)
+	s := table.New()
+	spec := strategy.Spec{Kind: strategy.KindTable, Config: map[string]any{"file": path}}
+	cases, err := s.Plan(context.Background(), spec, nil)
+	if err != nil {
+		t.Fatalf("Plan: %v", err)
+	}
+	if len(cases) != 1 {
+		t.Fatalf("cases: %d", len(cases))
+	}
+	c := cases[0]
+	if c.Expected == nil || c.Expected.Schema == nil {
+		t.Fatal("expected Schema on case")
+	}
+	if c.Expected.Schema.Type != "object" {
+		t.Errorf("Schema.Type=%q", c.Expected.Schema.Type)
+	}
+}
+
+func TestTableStrategy_Execute_SchemaPassesWhenBodyMatches(t *testing.T) {
+	t.Parallel()
+	s := table.New()
+	exec := &fakeExecutor{
+		response: model.ResponseDetail{
+			StatusCode: 200,
+			Body:       []byte(`{"id":"ord-1"}`),
+		},
+	}
+	sch := &model.SchemaRef{
+		Type: "object",
+		Properties: map[string]*model.SchemaRef{
+			"id": {Type: "string"},
+		},
+		Required: []string{"id"},
+	}
+	cases := []model.Case{{
+		ID:       "t1",
+		Expected: &model.CaseExpectation{StatusCode: 200, Schema: sch},
+	}}
+	results, err := s.Execute(context.Background(), cases, exec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !results[0].Passed {
+		t.Fatalf("expected pass, failures=%v", results[0].Failures)
+	}
+}
+
+func TestTableStrategy_Execute_SchemaFailsWhenBodyViolates(t *testing.T) {
+	t.Parallel()
+	s := table.New()
+	exec := &fakeExecutor{
+		response: model.ResponseDetail{
+			StatusCode: 200,
+			Body:       []byte(`{"id": 99}`),
+		},
+	}
+	sch := &model.SchemaRef{
+		Type: "object",
+		Properties: map[string]*model.SchemaRef{
+			"id": {Type: "string"},
+		},
+		Required: []string{"id"},
+	}
+	cases := []model.Case{{
+		ID:       "t1",
+		Expected: &model.CaseExpectation{StatusCode: 200, Schema: sch},
+	}}
+	results, err := s.Execute(context.Background(), cases, exec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if results[0].Passed {
+		t.Fatal("expected failure")
+	}
+	found := false
+	for _, f := range results[0].Failures {
+		if f.Invariant == model.InvariantResponseMatchesSchema {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("failures=%v", results[0].Failures)
+	}
+}
+
 func TestTableStrategy_Name(t *testing.T) {
 	t.Parallel()
 	s := table.New()

@@ -49,10 +49,16 @@ func NewJUnit(w io.Writer) Reporter { return &junitReporter{w: w} }
 
 func (r *junitReporter) Write(results []model.Result) error {
 	s := summarise(results)
+	failures := 0
+	for _, res := range results {
+		if !res.Skipped && !res.Passed && !res.Quarantined && len(res.Failures) > 0 {
+			failures++
+		}
+	}
 	suite := JUnitTestSuite{
 		Name:     "bt",
 		Tests:    s.Total,
-		Failures: s.Failed,
+		Failures: failures,
 	}
 
 	for _, res := range results {
@@ -63,7 +69,7 @@ func (r *junitReporter) Write(results []model.Result) error {
 		if res.Skipped {
 			suite.Skipped++
 			tc.Skipped = &JUnitSkipped{Message: res.SkipReason}
-		} else if !res.Passed && len(res.Failures) > 0 {
+		} else if !res.Passed && !res.Quarantined && len(res.Failures) > 0 {
 			msgs := ""
 			for _, f := range res.Failures {
 				label := f.Invariant

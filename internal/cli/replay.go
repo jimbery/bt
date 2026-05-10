@@ -69,7 +69,7 @@ func newReplayCmd() *cobra.Command {
 
 			stillFailing := false
 			for _, f := range artifact.Failures {
-				if replay.FailureStillPresentAfterReplay(f, resp) {
+				if replay.FailureStillPresentAfterReplay(f, resp, artifact.Expected) {
 					stillFailing = true
 					break
 				}

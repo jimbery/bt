@@ -1,4 +1,4 @@
-.PHONY: test lint precommit integration bt orders-api run-orders-api run-bt-orders run-bt-orders-property run-integration-local
+.PHONY: test lint precommit integration bt install orders-api run-orders-api run-bt-orders run-bt-orders-property run-integration-local
 
 test:
 	go test ./... -race
@@ -8,7 +8,7 @@ lint:
 	golangci-lint fmt
 	golangci-lint run
 
-# Lint + race tests + orders-api integration (table, property, fuzz — CI parity). Used by .githooks/pre-commit.
+# Lint + race tests + orders-api integration (table, property, fuzz, contract, doctor — CI parity). Used by .githooks/pre-commit.
 precommit: lint test integration
 
 # Alias: same recipe as run-integration-local (start orders-api, run bt strategies).
@@ -16,6 +16,10 @@ integration: run-integration-local
 
 bt:
 	go build -o bt ./cmd/bt
+
+# Install bt onto your PATH (same binary as CI builds). Requires $(go env GOPATH)/bin or GOBIN on PATH.
+install:
+	go install ./cmd/bt
 
 orders-api:
 	go build -o orders-api ./examples/orders-api
@@ -32,7 +36,7 @@ run-bt-orders: bt
 run-bt-orders-property: bt
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property
 
-# One-shot: build, start orders-api in the background, run table + property + fuzz (matches CI smoke), then stop the API.
+# One-shot: build, start orders-api in the background, run table + property + fuzz + contract + doctor (matches CI smoke), then stop the API.
 run-integration-local: bt orders-api
 	set -e; \
 	command -v jq >/dev/null 2>&1 || { echo "error: jq is required for make integration (e.g. brew install jq)" >&2; exit 1; }; \
@@ -44,6 +48,8 @@ run-integration-local: bt orders-api
 	done; \
 	curl -sf http://localhost:$${PORT:-8080}/health >/dev/null; \
 	./bt validate --config examples/orders-api/bt/backendtest.yaml --output json | jq -e '.valid == true' >/dev/null; \
+	./bt doctor --config examples/orders-api/bt/backendtest.yaml; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property; \
-	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy fuzz --safety safe --fuzz-iterations 20
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy fuzz --safety safe --fuzz-iterations 20; \
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy contract

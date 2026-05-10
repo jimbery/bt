@@ -22,6 +22,8 @@ type SchemaRef struct {
 	Format     string                `json:"format,omitempty"`
 	Properties map[string]*SchemaRef `json:"properties,omitempty"`
 	Items      *SchemaRef            `json:"items,omitempty"`
+	// AdditionalProperties, when non-nil, mirrors OpenAPI: false rejects undeclared object keys (contract strategy records warnings).
+	AdditionalProperties *bool                 `json:"additionalProperties,omitempty"`
 	Required   []string              `json:"required,omitempty"`
 	Nullable   bool                  `json:"nullable,omitempty"`
 	Enum       []any                 `json:"enum,omitempty"`

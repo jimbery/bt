@@ -2,7 +2,7 @@
 
 `bt` is a Go-native backend testing CLI. It discovers operations from an **OpenAPI** description, runs **table** tests you define in YAML against a live **base URL**, and can write **failure artifacts** plus a **`replay`** command to re-run a captured request.
 
-Today the supported strategy in the CLI is **table**; property, fuzz, and contract strategies are planned.
+Today the CLI supports **table**, **property**, **fuzz**, and **contract** strategies, plus **`bt doctor`** for pre-flight checks.
 
 ## Requirements
 
@@ -99,7 +99,11 @@ safety:
 
 ### Table tests (`table.yaml`)
 
-Cases are a list of `id`, optional `operation_id` (for discovery alignment with OpenAPI), `input` (HTTP method, path, optional `query`, `headers`, `body`), and optional `expected` (`status_code`, `headers`).
+Cases are a list of `id`, optional `operation_id` (for discovery alignment with OpenAPI), `input` (HTTP method, path, optional `query`, `headers`, `body`), and optional `expected` with:
+
+- `status_code` — HTTP status must match.
+- `headers` — selected response headers must match (canonical names).
+- `schema` — inline JSON-schema-shaped object for the **response body** (same validator as the property strategy’s `response_matches_schema` invariant). OpenAPI `$ref` strings (for example `#/components/schemas/Order`) are not resolved here; use an inline subtree or rely on the **contract** strategy for spec-driven checks.
 
 ```yaml
 cases:
@@ -110,6 +114,12 @@ cases:
       path: /health
     expected:
       status_code: 200
+      schema:
+        type: object
+        required: [status]
+        properties:
+          status:
+            type: string
 ```
 
 Run them with `bt run --strategy table`.
@@ -118,7 +128,7 @@ Run them with `bt run --strategy table`.
 
 - **Console / JSON / JUnit** output is selected with **`--output`** on `bt run` (`console`, `json`, `junit`).
 - On **failed** table cases, `bt` may write a **JSON artifact** under `<directory of config>/.bt/artifacts/`. The console report prints `artifact:` and a suggested `bt replay …` line.
-- **`bt replay`** re-evaluates recorded failures against the new response. Today **`status_code`** and **`response_header`** invariants from the artifact are replayed.
+- **`bt replay`** re-evaluates recorded failures against the new response. **`status_code`**, **`response_header`**, and (when the artifact includes expectations) **`response_matches_schema`** are replayed.
 
 ## Example: in-repo `orders-api`
 

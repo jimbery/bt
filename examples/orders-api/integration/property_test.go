@@ -33,14 +33,28 @@ func findRepoRoot(t *testing.T) string {
 
 func requireOrdersAPI(t *testing.T) {
 	t.Helper()
-	resp, err := http.Get("http://localhost:8080/health")
-	if err != nil {
-		t.Skip("orders-api not reachable on :8080:", err)
+	bases := []string{}
+	if p := strings.TrimSpace(os.Getenv("PORT")); p != "" {
+		bases = append(bases, "http://127.0.0.1:"+p, "http://localhost:"+p)
 	}
-	_ = resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Skip("orders-api health check returned", resp.StatusCode)
+	bases = append(bases, "http://localhost:8080", "http://127.0.0.1:18080")
+
+	seen := make(map[string]struct{})
+	for _, base := range bases {
+		if _, dup := seen[base]; dup {
+			continue
+		}
+		seen[base] = struct{}{}
+		resp, err := http.Get(base + "/health")
+		if err == nil && resp.StatusCode == http.StatusOK {
+			_ = resp.Body.Close()
+			return
+		}
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
 	}
+	t.Skip("orders-api not reachable (set PORT or start on :8080 or :18080)")
 }
 
 // propertyReport matches the JSON output format from bt run --output json.

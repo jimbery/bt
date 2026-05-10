@@ -4,6 +4,8 @@
 # from the repository root, matching CI.)
 version: 1
 
+baseline: .bt/baseline.yaml
+
 target:
   name: orders-api
   base_url: http://localhost:8080
@@ -34,6 +36,15 @@ strategies:
       - ListOrders
     config:
       fuzz_iterations: 20
+
+  # Contract: minimal requests per operation; response vs OpenAPI schemas.
+  - type: contract
+    operations:
+      - GetHealth
+      - ListOrders
+      - CreateOrder
+      - GetOrder
+      - GetOrderBroken
 
 report:
   formats: [console, json, junit]

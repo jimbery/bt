@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"sync/atomic"
 )
 
@@ -95,6 +96,22 @@ func handleUpdateOrder(s *store) http.HandlerFunc {
 				"order "+id+" not found")
 			return
 		}
+		if os.Getenv("ORDERS_API_TIMESTAMP_BUG") == "1" && req.Status == "cancelled" {
+			var ts int64
+			if o.CancelledAt != nil {
+				ts = o.CancelledAt.Unix()
+			}
+			writeJSON(w, http.StatusOK, map[string]any{
+				"id":           o.ID,
+				"amount":       o.Amount,
+				"currency":     o.Currency,
+				"description":  o.Description,
+				"status":       o.Status,
+				"created_at":   o.CreatedAt,
+				"cancelled_at": ts,
+			})
+			return
+		}
 		writeJSON(w, http.StatusOK, o)
 	}
 }
@@ -118,10 +135,8 @@ func handleBrokenOrder(s *store) http.HandlerFunc {
 			})
 			return
 		}
-		if n%2 == 0 {
-			writeJSON(w, http.StatusOK, o)
-			return
-		}
+		// Known order: always return an Order-shaped response that violates the schema
+		// (missing required fields) so contract runs are deterministic.
 		writeJSON(w, http.StatusOK, map[string]any{
 			"id": o.ID,
 		})

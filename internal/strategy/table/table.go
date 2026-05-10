@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/jayimbery/bt/internal/strategy"
+	"github.com/jayimbery/bt/internal/strategy/property/validate"
 	"github.com/jayimbery/bt/pkg/model"
 )
 
@@ -70,6 +71,9 @@ type caseInputEntry struct {
 type caseExpectedEntry struct {
 	StatusCode int               `yaml:"status_code"`
 	Headers    map[string]string `yaml:"headers"`
+	// Schema is an inline JSON-schema-shaped object (same shape as OpenAPI components).
+	// Decoded via JSON round-trip into model.SchemaRef so nested keys match json tags.
+	Schema any `yaml:"schema,omitempty"`
 }
 
 // Plan loads cases from the YAML file specified in spec.Config["file"].
@@ -104,15 +108,38 @@ func (s *tableStrategy) Plan(_ context.Context, spec strategy.Spec, _ []model.Op
 			},
 		}
 		if entry.Expected != nil {
-			c.Expected = &model.CaseExpectation{
+			exp := &model.CaseExpectation{
 				StatusCode: entry.Expected.StatusCode,
 				Headers:    entry.Expected.Headers,
 			}
+			if entry.Expected.Schema != nil {
+				sch, err := schemaRefFromYAML(entry.Expected.Schema)
+				if err != nil {
+					return nil, fmt.Errorf("case %q: expected.schema: %w", entry.ID, err)
+				}
+				exp.Schema = sch
+			}
+			c.Expected = exp
 		}
 		cases = append(cases, c)
 	}
 
 	return cases, nil
+}
+
+func schemaRefFromYAML(v any) (*model.SchemaRef, error) {
+	if v == nil {
+		return nil, nil
+	}
+	raw, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	var sch model.SchemaRef
+	if err := json.Unmarshal(raw, &sch); err != nil {
+		return nil, err
+	}
+	return &sch, nil
 }
 
 func cloneStringMap(m map[string]string) map[string]string {
@@ -185,6 +212,18 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 					})
 				}
 			}
+
+			if c.Expected.Schema != nil {
+				for _, v := range validate.ValidateResponse(resp.Body, c.Expected.Schema) {
+					failures = append(failures, model.Failure{
+						Invariant: model.InvariantResponseMatchesSchema,
+						Message:   v.Message,
+						Path:      v.Path,
+						Expected:  v.Expected,
+						Actual:    v.Got,
+					})
+				}
+			}
 		}
 
 		result.Failures = failures
@@ -200,6 +239,7 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 				Request:      result.Request,
 				Response:     resp,
 				Failures:     failures,
+				Expected:     c.Expected,
 			}
 			artifactPath, writeErr := s.opts.ArtifactWriter.Write(artifact)
 			if writeErr != nil {
