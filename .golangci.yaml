@@ -27,6 +27,11 @@ linters:
       default-signifies-exhaustive: true
   exclusions:
     rules:
+      # MCP handlers return structured JSON for domain errors and use nil error
+      # so the stdio server does not treat them as transport failures.
+      - path: internal/mcp/
+        linters:
+          - nilerr
       # Test files get a bit more latitude
       - path: _test\.go
         linters:

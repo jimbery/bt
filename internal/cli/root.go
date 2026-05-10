@@ -6,7 +6,7 @@ func NewRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "bt",
 		Short:         "Backend testing platform",
-		Long:          "bt is a Go-native backend testing platform for table, property, fuzz, and contract testing strategies.",
+		Long:          "bt is a Go-native backend testing platform for table, property, fuzz, and contract testing strategies. Use `bt mcp serve` to expose tools over the Model Context Protocol.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
@@ -21,6 +21,7 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newRunCmd())
 	root.AddCommand(newReplayCmd())
 	root.AddCommand(newDoctorCmd())
+	root.AddCommand(newMcpCmd())
 
 	return root
 }
