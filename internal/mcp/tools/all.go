@@ -1,9 +1,17 @@
 package tools
 
-import "github.com/jayimbery/bt/internal/mcp/registry"
+import (
+	"github.com/jayimbery/bt/internal/ai"
+	"github.com/jayimbery/bt/internal/mcp/registry"
+)
 
-// All returns every MCP tool definition for registration and description tests.
+// All returns every MCP tool definition with no AI provider (rule-based suggest_strategy).
 func All() []registry.Tool {
+	return AllWithProvider(nil)
+}
+
+// AllWithProvider returns MCP tools, wiring the AI provider into suggest tools when non-nil.
+func AllWithProvider(p ai.Provider) []registry.Tool {
 	return []registry.Tool{
 		{
 			Name:        "bt_discover_operations",
@@ -15,7 +23,13 @@ func All() []registry.Tool {
 			Name:        "bt_suggest_strategy",
 			Description: descSuggestStrategy,
 			InputSchema: inputSuggestStrategy,
-			Handler:     SuggestStrategyHandler(),
+			Handler:     SuggestStrategyHandler(p),
+		},
+		{
+			Name:        "bt_suggest_invariants",
+			Description: descSuggestInvariants,
+			InputSchema: inputSuggestInvariants,
+			Handler:     SuggestInvariantsHandler(p),
 		},
 		{
 			Name:        "bt_validate",

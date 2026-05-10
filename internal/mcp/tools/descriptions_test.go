@@ -64,6 +64,7 @@ func TestAllExpectedToolsAreRegistered(t *testing.T) {
 	expected := []string{
 		"bt_discover_operations",
 		"bt_suggest_strategy",
+		"bt_suggest_invariants",
 		"bt_validate",
 		"bt_scaffold_config",
 		"bt_run",
