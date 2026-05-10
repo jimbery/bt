@@ -249,6 +249,135 @@ jobs:
           echo "$VALIDATE" | jq -e '.valid == true' > /dev/null
           echo "OK: scaffolded config passes validation"
 
+      # M7.5 — AI scaffold layer (stub path; always runs)
+      - name: AI scaffold — bt_suggest_invariants (stub path, CreateOrder)
+        run: |
+          RESULT=$(./bt mcp call bt_suggest_invariants \
+            --input '{"schema_path":"examples/orders-api/spec/openapi.yaml","operation_id":"CreateOrder"}' \
+            --output json)
+
+          echo "Response:"
+          echo "$RESULT" | jq .
+
+          echo "$RESULT" | jq -e '.operation_id == "CreateOrder"' > /dev/null
+          echo "$RESULT" | jq -e '.provider != null and .provider != ""' > /dev/null
+          echo "$RESULT" | jq -e '.suggestions | length > 0' > /dev/null
+          echo "$RESULT" | jq -e '.suggestions[0] | has("name") and has("rationale") and has("confidence") and has("invariant_type")' > /dev/null
+          echo "OK: bt_suggest_invariants returned valid structured suggestions"
+
+      - name: AI scaffold — suggestions confidence values are valid
+        run: |
+          RESULT=$(./bt mcp call bt_suggest_invariants \
+            --input '{"schema_path":"examples/orders-api/spec/openapi.yaml","operation_id":"CreateOrder"}' \
+            --output json)
+
+          INVALID=$(echo "$RESULT" | jq '[.suggestions[] | select(.confidence as $c | (["high","medium","low"] | index($c)) == null)] | length')
+          if [ "$INVALID" -gt 0 ]; then
+            echo "FAIL: $INVALID suggestion(s) have invalid confidence values"
+            echo "$RESULT" | jq '.suggestions[] | {name,confidence}'
+            exit 1
+          fi
+          echo "OK: all confidence values are valid"
+
+      - name: AI scaffold — suggestions invariant_type values are valid
+        run: |
+          RESULT=$(./bt mcp call bt_suggest_invariants \
+            --input '{"schema_path":"examples/orders-api/spec/openapi.yaml","operation_id":"CreateOrder"}' \
+            --output json)
+
+          INVALID=$(echo "$RESULT" | jq '[.suggestions[] | select(.invariant_type as $t | (["no_5xx","response_matches_schema","idempotency","custom"] | index($t)) == null)] | length')
+          if [ "$INVALID" -gt 0 ]; then
+            echo "FAIL: $INVALID suggestion(s) have invalid invariant_type values"
+            echo "$RESULT" | jq '.suggestions[] | {name,invariant_type}'
+            exit 1
+          fi
+          echo "OK: all invariant_type values are valid"
+
+      - name: AI scaffold — bt_suggest_invariants for GetOrderBroken
+        run: |
+          RESULT=$(./bt mcp call bt_suggest_invariants \
+            --input '{"schema_path":"examples/orders-api/spec/openapi.yaml","operation_id":"GetOrderBroken"}' \
+            --output json)
+          echo "$RESULT" | jq -e '.operation_id == "GetOrderBroken"' > /dev/null
+          echo "$RESULT" | jq -e '.suggestions | length > 0' > /dev/null
+          echo "OK: bt_suggest_invariants works for GetOrderBroken"
+
+      - name: AI scaffold — bt_suggest_strategy returns provider field
+        run: |
+          RESULT=$(./bt mcp call bt_suggest_strategy \
+            --input '{"operations":[{"id":"CreateOrder","method":"POST","has_body":true}]}' \
+            --output json)
+          echo "$RESULT" | jq -e '.provider != null and .provider != ""' > /dev/null
+          echo "$RESULT" | jq -e '.recommendations | length > 0' > /dev/null
+          echo "OK: bt_suggest_strategy returns provider field"
+
+      - name: AI scaffold — unknown operation returns OPERATION_NOT_FOUND
+        run: |
+          RESULT=$(./bt mcp call bt_suggest_invariants \
+            --input '{"schema_path":"examples/orders-api/spec/openapi.yaml","operation_id":"DoesNotExist"}' \
+            --output json)
+          echo "$RESULT" | jq -e '.code == "OPERATION_NOT_FOUND"' > /dev/null
+          echo "OK: unknown operation returns structured error"
+
+      # M7.5 — AI-path smoke (optional; never blocks when secret is absent)
+      - name: AI scaffold — real provider smoke test (requires ANTHROPIC_API_KEY)
+        if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          echo "API key present — running real AI provider smoke test"
+
+          RESULT=$(./bt mcp call bt_suggest_invariants \
+            --input '{"schema_path":"examples/orders-api/spec/openapi.yaml","operation_id":"CreateOrder"}' \
+            --output json)
+
+          echo "AI response:"
+          echo "$RESULT" | jq .
+
+          PROVIDER=$(echo "$RESULT" | jq -r '.provider')
+          if [ "$PROVIDER" != "ai" ]; then
+            echo "FAIL: expected provider=ai when API key is set, got $PROVIDER"
+            exit 1
+          fi
+
+          echo "$RESULT" | jq -e '.suggestions | length > 0' > /dev/null
+          echo "$RESULT" | jq -e '.suggestions[0] | has("name") and has("rationale") and has("confidence") and has("invariant_type")' > /dev/null
+
+          SHORT_RATIONALES=$(echo "$RESULT" | jq '[.suggestions[] | select((.rationale | length) < 20)] | length')
+          if [ "$SHORT_RATIONALES" -gt 0 ]; then
+            echo "FAIL: $SHORT_RATIONALES suggestion(s) have suspiciously short rationale from real AI"
+            echo "$RESULT" | jq '.suggestions[] | {name, rationale}'
+            exit 1
+          fi
+
+          echo "OK: real AI provider returned valid structured suggestions with substantive rationale"
+
+      - name: AI scaffold — real provider bt_suggest_strategy (requires ANTHROPIC_API_KEY)
+        if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          RESULT=$(./bt mcp call bt_suggest_strategy \
+            --input '{"operations":[
+              {"id":"CreateOrder","method":"POST","has_body":true},
+              {"id":"GetOrder","method":"GET","has_body":false},
+              {"id":"GetOrderBroken","method":"GET","has_body":false}
+            ]}' \
+            --output json)
+
+          PROVIDER=$(echo "$RESULT" | jq -r '.provider')
+          if [ "$PROVIDER" != "ai" ]; then
+            echo "FAIL: expected provider=ai, got $PROVIDER"
+            exit 1
+          fi
+
+          EMPTY=$(echo "$RESULT" | jq '[.recommendations[].strategies[] | select(.rationale == "" or .rationale == null)] | length')
+          if [ "$EMPTY" -gt 0 ]; then
+            echo "FAIL: $EMPTY strategy entries have empty rationale from AI provider"
+            exit 1
+          fi
+          echo "OK: AI-backed bt_suggest_strategy returned substantive rationale"
+
       - name: Go integration tests (property + fuzz + MCP)
         run: go test -tags=integration ./examples/orders-api/integration/... -count=1
 
