@@ -95,7 +95,7 @@ safety:
   profile: safe
 ```
 
-**Paths** in the config (schema, case `file`, `report.output_dir`) are resolved relative to the **process working directory**, not the config file’s directory. When using nested configs (for example under `examples/orders-api/bt/`), run `bt` from the repo root and use paths like `examples/orders-api/openapi.yaml`, matching CI.
+**Paths** in the config (schema, case `file`, `report.output_dir`) are resolved relative to the **process working directory**, not the config file’s directory. When using nested configs (for example under `examples/orders-api/bt/`), run `bt` from the repo root and use paths like `examples/orders-api/spec/openapi.yaml`, matching CI.
 
 ### Table tests (`table.yaml`)
 
@@ -150,7 +150,7 @@ make run-integration-local
 
 ### Expected failures and replay smoke (M3.5)
 
-Deliberately failing cases live in `examples/orders-api/bt/backendtest-failures.yaml` and `examples/orders-api/bt/tests/table-expected-failures.yaml`. With the API running:
+Deliberately failing cases live in `examples/orders-api/bt/backendtest-failures.yaml` and `examples/orders-api/bt/cases/table-expected-failures.yaml`. With the API running:
 
 ```bash
 ./bt run --config examples/orders-api/bt/backendtest-failures.yaml --strategy table || true
@@ -162,7 +162,7 @@ LATEST=$(ls -t examples/orders-api/bt/.bt/artifacts/*.json | head -1)
 Or run the bundled script (from repo root, API already up):
 
 ```bash
-./examples/orders-api/bt/scripts/test-replay.sh
+./examples/orders-api/scripts/test-replay.sh
 ```
 
 ## Development

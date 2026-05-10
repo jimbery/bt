@@ -12,6 +12,9 @@ type Result struct {
 	SkipReason    string         `json:"skip_reason,omitempty"`
 	StrategyKind  string         `json:"strategy_kind,omitempty"`
 	MutationCount int            `json:"mutation_count,omitempty"`
+	Seed          int64          `json:"seed,omitempty"`
+	CasesRun      int            `json:"cases_run,omitempty"`
+	ShrinkCount   int            `json:"shrink_count,omitempty"`
 	StatusCode    int            `json:"status_code"`
 	Duration      time.Duration  `json:"-"`
 	Failures      []Failure      `json:"failures,omitempty"`
@@ -71,6 +74,9 @@ func (r Result) MarshalJSON() ([]byte, error) {
 		SkipReason    string         `json:"skip_reason,omitempty"`
 		StrategyKind  string         `json:"strategy_kind,omitempty"`
 		MutationCount int            `json:"mutation_count,omitempty"`
+		Seed          int64          `json:"seed,omitempty"`
+		CasesRun      int            `json:"cases_run,omitempty"`
+		ShrinkCount   int            `json:"shrink_count,omitempty"`
 		StatusCode    int            `json:"status_code"`
 		DurationMS    int64          `json:"duration_ms"`
 		Failures      []Failure      `json:"failures,omitempty"`
@@ -85,6 +91,9 @@ func (r Result) MarshalJSON() ([]byte, error) {
 		SkipReason:    r.SkipReason,
 		StrategyKind:  r.StrategyKind,
 		MutationCount: r.MutationCount,
+		Seed:          r.Seed,
+		CasesRun:      r.CasesRun,
+		ShrinkCount:   r.ShrinkCount,
 		StatusCode:    r.StatusCode,
 		DurationMS:    r.Duration.Milliseconds(),
 		Failures:      r.Failures,
@@ -102,6 +111,9 @@ func (r *Result) UnmarshalJSON(data []byte) error {
 		SkipReason    string         `json:"skip_reason,omitempty"`
 		StrategyKind  string         `json:"strategy_kind,omitempty"`
 		MutationCount int            `json:"mutation_count,omitempty"`
+		Seed          int64          `json:"seed,omitempty"`
+		CasesRun      int            `json:"cases_run,omitempty"`
+		ShrinkCount   int            `json:"shrink_count,omitempty"`
 		StatusCode    int            `json:"status_code"`
 		DurationMS    int64          `json:"duration_ms"`
 		Failures      []Failure      `json:"failures,omitempty"`
@@ -119,6 +131,9 @@ func (r *Result) UnmarshalJSON(data []byte) error {
 	r.SkipReason = aux.SkipReason
 	r.StrategyKind = aux.StrategyKind
 	r.MutationCount = aux.MutationCount
+	r.Seed = aux.Seed
+	r.CasesRun = aux.CasesRun
+	r.ShrinkCount = aux.ShrinkCount
 	r.StatusCode = aux.StatusCode
 	r.Duration = time.Duration(aux.DurationMS) * time.Millisecond
 	r.Failures = aux.Failures

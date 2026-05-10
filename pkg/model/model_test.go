@@ -258,13 +258,17 @@ func TestResult_FailedWithFailures(t *testing.T) {
 func TestResult_JSONRoundTrip(t *testing.T) {
 	t.Parallel()
 	original := model.Result{
-		CaseID:     "case-003",
-		Passed:     false,
-		StatusCode: 422,
-		Duration:   10 * time.Millisecond,
-		Failures:   []model.Failure{{Invariant: "response_matches_schema", Message: "field 'id' missing"}},
-		Request:    model.RequestDetail{Method: "POST", URL: "https://staging.example.com/orders", Body: []byte(`{"amount":0}`)},
-		Response:   model.ResponseDetail{StatusCode: 422, Body: []byte(`{"error":"invalid"}`)},
+		CaseID:       "case-003",
+		Passed:       false,
+		StatusCode:   422,
+		Duration:     10 * time.Millisecond,
+		Failures:     []model.Failure{{Invariant: "response_matches_schema", Message: "field 'id' missing"}},
+		Request:      model.RequestDetail{Method: "POST", URL: "https://staging.example.com/orders", Body: []byte(`{"amount":0}`)},
+		Response:     model.ResponseDetail{StatusCode: 422, Body: []byte(`{"error":"invalid"}`)},
+		StrategyKind: "property",
+		Seed:         42,
+		CasesRun:     100,
+		ShrinkCount:  3,
 	}
 
 	data, err := json.Marshal(original)
@@ -288,6 +292,18 @@ func TestResult_JSONRoundTrip(t *testing.T) {
 	}
 	if decoded.Duration != original.Duration {
 		t.Errorf("Duration: got %v, want %v", decoded.Duration, original.Duration)
+	}
+	if decoded.StrategyKind != original.StrategyKind {
+		t.Errorf("StrategyKind: got %q, want %q", decoded.StrategyKind, original.StrategyKind)
+	}
+	if decoded.Seed != original.Seed {
+		t.Errorf("Seed: got %d, want %d", decoded.Seed, original.Seed)
+	}
+	if decoded.CasesRun != original.CasesRun {
+		t.Errorf("CasesRun: got %d, want %d", decoded.CasesRun, original.CasesRun)
+	}
+	if decoded.ShrinkCount != original.ShrinkCount {
+		t.Errorf("ShrinkCount: got %d, want %d", decoded.ShrinkCount, original.ShrinkCount)
 	}
 }
 

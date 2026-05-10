@@ -40,4 +40,14 @@ Optional flags:
 ./bt run --config examples/orders-api/bt/backendtest-failures.yaml --strategy table || true
 ```
 
-OpenAPI spec: `openapi.yaml`. Table cases: `bt/tests/table.yaml`.
+## Layout
+
+| Path | Purpose |
+|------|---------|
+| `main.go`, `handlers.go`, `store.go`, … | Example HTTP server (`package main`) |
+| `spec/openapi.yaml` | OpenAPI contract; `go test ./examples/orders-api/spec` runs phrase-level checks |
+| `bt/` | `backendtest*.yaml` configs and `bt/cases/*.yaml` table fixtures |
+| `integration/` | Opt-in tests (`//go:build integration`) that shell out to `bt` against a running API |
+| `scripts/` | Helper shell scripts (replay smoke, property verification) — run from repo root |
+
+OpenAPI: `spec/openapi.yaml`. Table cases: `bt/cases/table.yaml`.

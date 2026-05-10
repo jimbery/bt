@@ -19,15 +19,23 @@ type store struct {
 	mu     sync.RWMutex
 	orders map[string]*order
 	seq    int
+	// idem maps Idempotency-Key header value to order ID for replay-safe creates.
+	idem map[string]string
 }
 
 func newStore() *store {
-	return &store{orders: make(map[string]*order)}
+	return &store{orders: make(map[string]*order), idem: make(map[string]string)}
 }
 
-func (s *store) create(amount int, currency, description string) *order {
+func (s *store) create(amount int, currency, description, idemKey string) *order {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	if idemKey != "" {
+		if id, ok := s.idem[idemKey]; ok {
+			return s.orders[id]
+		}
+	}
 
 	s.seq++
 	o := &order{
@@ -39,6 +47,9 @@ func (s *store) create(amount int, currency, description string) *order {
 		CreatedAt:   time.Now().UTC(),
 	}
 	s.orders[o.ID] = o
+	if idemKey != "" {
+		s.idem[idemKey] = o.ID
+	}
 	return o
 }
 
