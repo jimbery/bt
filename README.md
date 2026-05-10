@@ -191,7 +191,7 @@ Or run **lint, race tests, and local integration** together (same as the git hoo
 make precommit
 ```
 
-That runs `golangci-lint fmt`, `golangci-lint run`, **`go test ./... -race`**, then **`make integration`**: builds `bt` and `orders-api`, starts the example API briefly, and runs **`bt`** with **table**, **property**, and **fuzz** strategies (same smoke as CI). Install [golangci-lint](https://golangci-lint.run/welcome/install/) v2 locally. **Requires `curl`** on your PATH for the health check.
+That runs `golangci-lint fmt`, `golangci-lint run`, **`go test ./... -race -count=1`** (all default-tagged packages), then **`make integration`**: builds `bt` and `orders-api`, starts the example API briefly, runs **`bt`** validate, doctor, **table**, **property**, **fuzz**, and **contract**, then **`go test ./examples/orders-api/integration/... -tags integration -race -count=1`** (same integration tests as CI). Install [golangci-lint](https://golangci-lint.run/welcome/install/) v2 locally. **Requires `curl`** and **`jq`** on your PATH.
 
 **Optional — run `make precommit` on every commit**:
 

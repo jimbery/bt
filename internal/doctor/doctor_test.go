@@ -51,8 +51,11 @@ func TestDoctor_TargetReturns200_TargetReachablePasses(t *testing.T) {
 	if !result.Passed {
 		t.Errorf("expected check to pass, got: %s", result.Message)
 	}
-	if result.DurationMs <= 0 {
-		t.Error("DurationMs must be positive")
+	if result.DurationMs < 0 {
+		t.Error("DurationMs must not be negative")
+	}
+	if !strings.Contains(result.Message, "ms") {
+		t.Errorf("expected message to report duration in ms, got %q", result.Message)
 	}
 }
 

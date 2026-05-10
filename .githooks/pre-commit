@@ -1,7 +1,8 @@
 #!/bin/sh
 # Run from repo root after: git config core.hooksPath .githooks
-# Runs: make precommit → lint, race tests, then orders-api + bt (validate|jq, table, property, fuzz).
-# Requires: jq (same as CI MCP smoke — `brew install jq` on macOS).
+# Runs: make precommit → lint, go test ./... -race -count=1 (all default-tagged tests), then
+# orders-api + bt smoke + go test ./examples/orders-api/integration/... -tags integration -race.
+# Requires: jq (same as CI — `brew install jq` on macOS).
 set -e
 cd "$(git rev-parse --show-toplevel)"
 make precommit

@@ -1,14 +1,16 @@
 .PHONY: test lint precommit integration bt install orders-api run-orders-api run-bt-orders run-bt-orders-property run-integration-local
 
+# All default-tagged tests under ./... (race + no test cache reuse). Excludes packages that
+# require //go:build integration — those run in `make integration` with orders-api up.
 test:
-	go test ./... -race
+	go test ./... -race -count=1
 
 # Match CI: format (gofmt + goimports) then linters. Run before every commit.
 lint:
 	golangci-lint fmt
 	golangci-lint run
 
-# Lint + race tests + orders-api integration (table, property, fuzz, contract, doctor — CI parity). Used by .githooks/pre-commit.
+# Lint + every ./... test + orders-api smoke (bt + go test -tags integration). Used by .githooks/pre-commit.
 precommit: lint test integration
 
 # Alias: same recipe as run-integration-local (start orders-api, run bt strategies).
@@ -36,7 +38,8 @@ run-bt-orders: bt
 run-bt-orders-property: bt
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property
 
-# One-shot: build, start orders-api in the background, run table + property + fuzz + contract + doctor (matches CI smoke), then stop the API.
+# One-shot: build, start orders-api in the background, run bt smoke (validate, doctor, strategies),
+# then examples/orders-api integration tests (-tags integration, same as example-bt CI), then stop the API.
 run-integration-local: bt orders-api
 	set -e; \
 	command -v jq >/dev/null 2>&1 || { echo "error: jq is required for make integration (e.g. brew install jq)" >&2; exit 1; }; \
@@ -52,4 +55,5 @@ run-integration-local: bt orders-api
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy fuzz --safety safe --fuzz-iterations 20; \
-	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy contract
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy contract; \
+	go test ./examples/orders-api/integration/... -tags integration -race -count=1
