@@ -264,7 +264,13 @@ func (pathMutator) Mutate(seed Input, r *rand.Rand) Input {
 	special := []string{"%00", "<script>", "' OR 1=1--"}
 	switch r.Intn(6) {
 	case 0:
-		segs[si] = ""
+		// Never clear the only URL segment: /health -> / hits a different route and
+		// produces statuses not declared on this operation (e.g. GET / vs GET /health).
+		if len(segs) == 1 {
+			segs[si] = segs[si] + "_"
+		} else {
+			segs[si] = ""
+		}
 	case 1:
 		segs[si] = strings.Repeat("P", 2048)
 	case 2:

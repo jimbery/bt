@@ -248,6 +248,17 @@ func TestPathMutator_Mutate_DoesNotPanicOnRootPath(t *testing.T) {
 	m.Mutate(input, rng(1))
 }
 
+func TestPathMutator_SingleSegmentPathNeverCollapsesToRoot(t *testing.T) {
+	m := mutate.NewPathMutator()
+	in := mutate.Input{Method: "GET", Path: "/health"}
+	for seed := int64(0); seed < 300; seed++ {
+		out := m.Mutate(in, rng(seed))
+		if out.Path == "/" {
+			t.Fatalf("seed %d: path collapsed to /", seed)
+		}
+	}
+}
+
 func TestPathMutator_Mutate_ProducesChangedPath_OverManyRuns(t *testing.T) {
 	m := mutate.NewPathMutator()
 	input := validJSONInput()
