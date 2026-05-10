@@ -19,6 +19,11 @@ import (
 	"github.com/jayimbery/bt/pkg/model"
 )
 
+// rapidRunMu serialises property runs that touch Rapid's global command-line flags
+// (rapid.checks, rapid.seed). Without this, parallel tests or concurrent Execute
+// calls data-race on the flag package.
+var rapidRunMu sync.Mutex
+
 // ArtifactWriter persists failure bundles (same contract as replay.Writer).
 type ArtifactWriter interface {
 	Write(a model.Artifact) (string, error)
@@ -94,6 +99,9 @@ func (s *propertyStrategy) Execute(ctx context.Context, cases []model.Case, exec
 }
 
 func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Executor, c model.Case, op model.Operation) model.Result {
+	rapidRunMu.Lock()
+	defer rapidRunMu.Unlock()
+
 	tb := newPropTB(c.ID)
 	applyRapidFlags(s.checks, s.seed)
 
@@ -142,16 +150,15 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 	})
 	dur := time.Since(start)
 
+	req, resp, failures, failed := tb.exportState()
 	final := model.Result{
 		CaseID:     c.ID,
-		StatusCode: tb.lastResponse.StatusCode,
+		StatusCode: resp.StatusCode,
 		Duration:   dur,
-		Response:   tb.lastResponse,
-		Request:    tb.lastRequest,
-		Passed:     !tb.Failed(),
-	}
-	if tb.Failed() {
-		final.Failures = tb.lastFailures
+		Response:   resp,
+		Request:    req,
+		Passed:     !failed,
+		Failures:   failures,
 	}
 	if !final.Passed && s.opts.ArtifactWriter != nil {
 		seedVal := int64(0)
@@ -412,13 +419,12 @@ func setFlag(name, value string) {
 
 // propTB is a minimal rapid.TB for use outside go test.
 type propTB struct {
-	name           string
-	failed         bool
-	mu             sync.Mutex
-	lastRequest    model.RequestDetail
-	lastResponse   model.ResponseDetail
-	lastFailures   []model.Failure
-	snapshotFailed bool
+	name         string
+	failed       bool
+	mu           sync.Mutex
+	lastRequest  model.RequestDetail
+	lastResponse model.ResponseDetail
+	lastFailures []model.Failure
 }
 
 func newPropTB(name string) *propTB {
@@ -432,8 +438,21 @@ func (p *propTB) snapshot(req model.RequestDetail, resp model.ResponseDetail, fa
 	p.lastResponse = resp
 	if failures != nil {
 		p.lastFailures = append([]model.Failure(nil), failures...)
-		p.snapshotFailed = len(failures) > 0
+	} else {
+		p.lastFailures = nil
 	}
+}
+
+// exportState returns a consistent snapshot of TB state for building model.Result
+// after rapid.Check returns (avoids races with any concurrent TB callbacks).
+func (p *propTB) exportState() (model.RequestDetail, model.ResponseDetail, []model.Failure, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	var failures []model.Failure
+	if len(p.lastFailures) > 0 {
+		failures = append([]model.Failure(nil), p.lastFailures...)
+	}
+	return p.lastRequest, p.lastResponse, failures, p.failed
 }
 
 func (p *propTB) Helper() {}

@@ -1,4 +1,4 @@
-.PHONY: test lint bt orders-api run-orders-api run-bt-orders run-bt-orders-property run-integration-local
+.PHONY: test lint precommit bt orders-api run-orders-api run-bt-orders run-bt-orders-property run-integration-local
 
 test:
 	go test ./... -race
@@ -7,6 +7,9 @@ test:
 lint:
 	golangci-lint fmt
 	golangci-lint run
+
+# Lint + race tests (used by .githooks/pre-commit).
+precommit: lint test
 
 bt:
 	go build -o bt ./cmd/bt
