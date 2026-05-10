@@ -13,16 +13,16 @@ import (
 // ContractRunResult mirrors the enriched JSON report from bt run --output json.
 type ContractRunResult struct {
 	Summary struct {
-		Total        int `json:"total"`
-		Passed       int `json:"passed"`
-		Failed       int `json:"failed"`
-		Quarantined  int `json:"quarantined"`
-		Skipped      int `json:"skipped"`
+		Total       int `json:"total"`
+		Passed      int `json:"passed"`
+		Failed      int `json:"failed"`
+		Quarantined int `json:"quarantined"`
+		Skipped     int `json:"skipped"`
 	} `json:"summary"`
 	Results []struct {
 		OperationID string `json:"operation_id"`
 		Passed      bool   `json:"passed"`
-		Quarantined bool  `json:"quarantined"`
+		Quarantined bool   `json:"quarantined"`
 		Violations  []struct {
 			Field    string `json:"field"`
 			Expected string `json:"expected"`

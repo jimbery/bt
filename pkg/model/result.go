@@ -6,29 +6,29 @@ import (
 )
 
 type Result struct {
-	CaseID               string         `json:"case_id"`
-	OperationID          string         `json:"operation_id,omitempty"`
-	Passed               bool           `json:"passed"`
-	Skipped              bool           `json:"skipped,omitempty"`
-	SkipReason           string         `json:"skip_reason,omitempty"`
-	StrategyKind         string         `json:"strategy_kind,omitempty"`
+	CaseID       string `json:"case_id"`
+	OperationID  string `json:"operation_id,omitempty"`
+	Passed       bool   `json:"passed"`
+	Skipped      bool   `json:"skipped,omitempty"`
+	SkipReason   string `json:"skip_reason,omitempty"`
+	StrategyKind string `json:"strategy_kind,omitempty"`
 	// ContractSchemaRef is set by the contract strategy when a response schema was evaluated.
-	ContractSchemaRef    string         `json:"contract_schema_ref,omitempty"`
+	ContractSchemaRef string `json:"contract_schema_ref,omitempty"`
 	// Quarantined is set when a failing contract result matches an active baseline entry.
-	Quarantined          bool           `json:"quarantined,omitempty"`
-	QuarantineReason     string         `json:"quarantine_reason,omitempty"`
-	QuarantineExpired    bool           `json:"quarantine_expired,omitempty"`
-	StaleBaseline        bool           `json:"stale_baseline,omitempty"`
-	MutationCount        int            `json:"mutation_count,omitempty"`
-	Seed                 int64          `json:"seed,omitempty"`
-	CasesRun             int            `json:"cases_run,omitempty"`
-	ShrinkCount          int            `json:"shrink_count,omitempty"`
-	StatusCode           int            `json:"status_code"`
-	Duration             time.Duration  `json:"-"`
-	Failures             []Failure      `json:"failures,omitempty"`
-	Request              RequestDetail  `json:"request"`
-	Response             ResponseDetail `json:"response"`
-	ArtifactPath         string         `json:"artifact_path,omitempty"`
+	Quarantined       bool           `json:"quarantined,omitempty"`
+	QuarantineReason  string         `json:"quarantine_reason,omitempty"`
+	QuarantineExpired bool           `json:"quarantine_expired,omitempty"`
+	StaleBaseline     bool           `json:"stale_baseline,omitempty"`
+	MutationCount     int            `json:"mutation_count,omitempty"`
+	Seed              int64          `json:"seed,omitempty"`
+	CasesRun          int            `json:"cases_run,omitempty"`
+	ShrinkCount       int            `json:"shrink_count,omitempty"`
+	StatusCode        int            `json:"status_code"`
+	Duration          time.Duration  `json:"-"`
+	Failures          []Failure      `json:"failures,omitempty"`
+	Request           RequestDetail  `json:"request"`
+	Response          ResponseDetail `json:"response"`
+	ArtifactPath      string         `json:"artifact_path,omitempty"`
 }
 
 type Failure struct {
@@ -76,76 +76,76 @@ type ResponseDetail struct {
 
 func (r Result) MarshalJSON() ([]byte, error) {
 	type out struct {
-		CaseID               string         `json:"case_id"`
-		OperationID          string         `json:"operation_id,omitempty"`
-		Passed               bool           `json:"passed"`
-		Skipped              bool           `json:"skipped,omitempty"`
-		SkipReason           string         `json:"skip_reason,omitempty"`
-		StrategyKind         string         `json:"strategy_kind,omitempty"`
-		ContractSchemaRef    string         `json:"contract_schema_ref,omitempty"`
-		Quarantined          bool           `json:"quarantined,omitempty"`
-		QuarantineReason     string         `json:"quarantine_reason,omitempty"`
-		QuarantineExpired    bool           `json:"quarantine_expired,omitempty"`
-		StaleBaseline        bool           `json:"stale_baseline,omitempty"`
-		MutationCount        int            `json:"mutation_count,omitempty"`
-		Seed                 int64          `json:"seed,omitempty"`
-		CasesRun             int            `json:"cases_run,omitempty"`
-		ShrinkCount          int            `json:"shrink_count,omitempty"`
-		StatusCode           int            `json:"status_code"`
-		DurationMS           int64          `json:"duration_ms"`
-		Failures             []Failure      `json:"failures,omitempty"`
-		Request              RequestDetail  `json:"request"`
-		Response             ResponseDetail `json:"response"`
-		ArtifactPath         string         `json:"artifact_path,omitempty"`
+		CaseID            string         `json:"case_id"`
+		OperationID       string         `json:"operation_id,omitempty"`
+		Passed            bool           `json:"passed"`
+		Skipped           bool           `json:"skipped,omitempty"`
+		SkipReason        string         `json:"skip_reason,omitempty"`
+		StrategyKind      string         `json:"strategy_kind,omitempty"`
+		ContractSchemaRef string         `json:"contract_schema_ref,omitempty"`
+		Quarantined       bool           `json:"quarantined,omitempty"`
+		QuarantineReason  string         `json:"quarantine_reason,omitempty"`
+		QuarantineExpired bool           `json:"quarantine_expired,omitempty"`
+		StaleBaseline     bool           `json:"stale_baseline,omitempty"`
+		MutationCount     int            `json:"mutation_count,omitempty"`
+		Seed              int64          `json:"seed,omitempty"`
+		CasesRun          int            `json:"cases_run,omitempty"`
+		ShrinkCount       int            `json:"shrink_count,omitempty"`
+		StatusCode        int            `json:"status_code"`
+		DurationMS        int64          `json:"duration_ms"`
+		Failures          []Failure      `json:"failures,omitempty"`
+		Request           RequestDetail  `json:"request"`
+		Response          ResponseDetail `json:"response"`
+		ArtifactPath      string         `json:"artifact_path,omitempty"`
 	}
 	return json.Marshal(out{
-		CaseID:               r.CaseID,
-		OperationID:          r.OperationID,
-		Passed:               r.Passed,
-		Skipped:              r.Skipped,
-		SkipReason:           r.SkipReason,
-		StrategyKind:         r.StrategyKind,
-		ContractSchemaRef:    r.ContractSchemaRef,
-		Quarantined:          r.Quarantined,
-		QuarantineReason:     r.QuarantineReason,
-		QuarantineExpired:    r.QuarantineExpired,
-		StaleBaseline:        r.StaleBaseline,
-		MutationCount:        r.MutationCount,
-		Seed:                 r.Seed,
-		CasesRun:             r.CasesRun,
-		ShrinkCount:          r.ShrinkCount,
-		StatusCode:           r.StatusCode,
-		DurationMS:           r.Duration.Milliseconds(),
-		Failures:             r.Failures,
-		Request:              r.Request,
-		Response:             r.Response,
-		ArtifactPath:         r.ArtifactPath,
+		CaseID:            r.CaseID,
+		OperationID:       r.OperationID,
+		Passed:            r.Passed,
+		Skipped:           r.Skipped,
+		SkipReason:        r.SkipReason,
+		StrategyKind:      r.StrategyKind,
+		ContractSchemaRef: r.ContractSchemaRef,
+		Quarantined:       r.Quarantined,
+		QuarantineReason:  r.QuarantineReason,
+		QuarantineExpired: r.QuarantineExpired,
+		StaleBaseline:     r.StaleBaseline,
+		MutationCount:     r.MutationCount,
+		Seed:              r.Seed,
+		CasesRun:          r.CasesRun,
+		ShrinkCount:       r.ShrinkCount,
+		StatusCode:        r.StatusCode,
+		DurationMS:        r.Duration.Milliseconds(),
+		Failures:          r.Failures,
+		Request:           r.Request,
+		Response:          r.Response,
+		ArtifactPath:      r.ArtifactPath,
 	})
 }
 
 func (r *Result) UnmarshalJSON(data []byte) error {
 	type in struct {
-		CaseID               string         `json:"case_id"`
-		OperationID          string         `json:"operation_id,omitempty"`
-		Passed               bool           `json:"passed"`
-		Skipped              bool           `json:"skipped,omitempty"`
-		SkipReason           string         `json:"skip_reason,omitempty"`
-		StrategyKind         string         `json:"strategy_kind,omitempty"`
-		ContractSchemaRef    string         `json:"contract_schema_ref,omitempty"`
-		Quarantined          bool           `json:"quarantined,omitempty"`
-		QuarantineReason     string         `json:"quarantine_reason,omitempty"`
-		QuarantineExpired    bool           `json:"quarantine_expired,omitempty"`
-		StaleBaseline        bool           `json:"stale_baseline,omitempty"`
-		MutationCount        int            `json:"mutation_count,omitempty"`
-		Seed                 int64          `json:"seed,omitempty"`
-		CasesRun             int            `json:"cases_run,omitempty"`
-		ShrinkCount          int            `json:"shrink_count,omitempty"`
-		StatusCode           int            `json:"status_code"`
-		DurationMS           int64          `json:"duration_ms"`
-		Failures             []Failure      `json:"failures,omitempty"`
-		Request              RequestDetail  `json:"request"`
-		Response             ResponseDetail `json:"response"`
-		ArtifactPath         string         `json:"artifact_path,omitempty"`
+		CaseID            string         `json:"case_id"`
+		OperationID       string         `json:"operation_id,omitempty"`
+		Passed            bool           `json:"passed"`
+		Skipped           bool           `json:"skipped,omitempty"`
+		SkipReason        string         `json:"skip_reason,omitempty"`
+		StrategyKind      string         `json:"strategy_kind,omitempty"`
+		ContractSchemaRef string         `json:"contract_schema_ref,omitempty"`
+		Quarantined       bool           `json:"quarantined,omitempty"`
+		QuarantineReason  string         `json:"quarantine_reason,omitempty"`
+		QuarantineExpired bool           `json:"quarantine_expired,omitempty"`
+		StaleBaseline     bool           `json:"stale_baseline,omitempty"`
+		MutationCount     int            `json:"mutation_count,omitempty"`
+		Seed              int64          `json:"seed,omitempty"`
+		CasesRun          int            `json:"cases_run,omitempty"`
+		ShrinkCount       int            `json:"shrink_count,omitempty"`
+		StatusCode        int            `json:"status_code"`
+		DurationMS        int64          `json:"duration_ms"`
+		Failures          []Failure      `json:"failures,omitempty"`
+		Request           RequestDetail  `json:"request"`
+		Response          ResponseDetail `json:"response"`
+		ArtifactPath      string         `json:"artifact_path,omitempty"`
 	}
 	var aux in
 	if err := json.Unmarshal(data, &aux); err != nil {

@@ -7,13 +7,13 @@ import (
 )
 
 type order struct {
-	ID           string     `json:"id"`
-	Amount       int        `json:"amount"`
-	Currency     string     `json:"currency"`
-	Description  string     `json:"description,omitempty"`
-	Status       string     `json:"status"`
-	CreatedAt    time.Time  `json:"created_at"`
-	CancelledAt  *time.Time `json:"cancelled_at,omitempty"`
+	ID          string     `json:"id"`
+	Amount      int        `json:"amount"`
+	Currency    string     `json:"currency"`
+	Description string     `json:"description,omitempty"`
+	Status      string     `json:"status"`
+	CreatedAt   time.Time  `json:"created_at"`
+	CancelledAt *time.Time `json:"cancelled_at,omitempty"`
 }
 
 type store struct {

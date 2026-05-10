@@ -31,10 +31,10 @@ type CheckResult struct {
 
 // Config drives RunAll.
 type Config struct {
-	SchemaPath   string
+	SchemaPath    string
 	TargetBaseURL string // e.g. https://localhost:8080 — doctor probes TargetBaseURL + "/health"
-	AuthEnvVar   string   // if non-empty, env must be set and non-empty
-	BaselinePath string
+	AuthEnvVar    string // if non-empty, env must be set and non-empty
+	BaselinePath  string
 }
 
 // CheckSchemaReachable verifies the schema file exists and is readable.

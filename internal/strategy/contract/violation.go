@@ -23,8 +23,8 @@ func (s ViolationSeverity) String() string {
 
 // ContractViolation is a single disagreement between a response and its schema.
 type ContractViolation struct {
-	Field    string            // JSON path, e.g. "order.status" or "tags[1]"
-	Expected string            // human description of what the schema declares
-	Actual   string            // what was found in the response
+	Field    string // JSON path, e.g. "order.status" or "tags[1]"
+	Expected string // human description of what the schema declares
+	Actual   string // what was found in the response
 	Severity ViolationSeverity
 }

@@ -63,21 +63,21 @@ type propertyReport struct {
 }
 
 type propertyResult struct {
-	CaseID        string    `json:"case_id"`
-	StrategyKind  string    `json:"strategy_kind"`
-	Seed          int64     `json:"seed"`
-	CasesRun      int       `json:"cases_run"`
-	ShrinkCount   int       `json:"shrink_count"`
-	Failures      []failure `json:"failures"`
-	ArtifactPath  string    `json:"artifact_path"`
+	CaseID       string    `json:"case_id"`
+	StrategyKind string    `json:"strategy_kind"`
+	Seed         int64     `json:"seed"`
+	CasesRun     int       `json:"cases_run"`
+	ShrinkCount  int       `json:"shrink_count"`
+	Failures     []failure `json:"failures"`
+	ArtifactPath string    `json:"artifact_path"`
 }
 
 type failure struct {
 	Invariant string `json:"invariant"`
 	Message   string `json:"message"`
 	Path      string `json:"path"`
-	Expected  any     `json:"expected"`
-	Actual    any     `json:"actual"`
+	Expected  any    `json:"expected"`
+	Actual    any    `json:"actual"`
 }
 
 func runPropertyTests(t *testing.T) propertyReport {

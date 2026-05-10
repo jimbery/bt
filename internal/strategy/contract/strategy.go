@@ -86,13 +86,13 @@ func (s *contractStrategy) runOne(ctx context.Context, exec strategy.Executor, c
 	rd := requestDetailFromInput(c.Input)
 	if err != nil {
 		return model.Result{
-			CaseID:        c.ID,
-			OperationID:   op.ID,
-			Passed:        false,
-			StrategyKind:  string(strategy.KindContract),
-			Duration:      dur,
-			Request:       rd,
-			Response:      model.ResponseDetail{},
+			CaseID:       c.ID,
+			OperationID:  op.ID,
+			Passed:       false,
+			StrategyKind: string(strategy.KindContract),
+			Duration:     dur,
+			Request:      rd,
+			Response:     model.ResponseDetail{},
 			Failures: []model.Failure{{
 				Invariant:      model.InvariantContract,
 				Classification: "execution_error",
@@ -212,12 +212,12 @@ func violationsToFailures(vv []ContractViolation) []model.Failure {
 			cl = "warning"
 		}
 		out = append(out, model.Failure{
-			Invariant:        model.InvariantContract,
-			Classification:   cl,
-			Message:          fmt.Sprintf("%s: expected %s; got %s", v.Field, v.Expected, v.Actual),
-			Path:             v.Field,
-			Expected:         v.Expected,
-			Actual:           v.Actual,
+			Invariant:      model.InvariantContract,
+			Classification: cl,
+			Message:        fmt.Sprintf("%s: expected %s; got %s", v.Field, v.Expected, v.Actual),
+			Path:           v.Field,
+			Expected:       v.Expected,
+			Actual:         v.Actual,
 		})
 	}
 	return out

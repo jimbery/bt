@@ -13,8 +13,8 @@ import (
 
 // Baseline captures known-failing contract operations (quarantine list).
 type Baseline struct {
-	Version     int               `yaml:"version"`
-	Quarantined []BaselineEntry   `yaml:"quarantined"`
+	Version     int             `yaml:"version"`
+	Quarantined []BaselineEntry `yaml:"quarantined"`
 }
 
 // BaselineEntry is one quarantined operation_id.
@@ -106,7 +106,7 @@ func (e *BaselineEntry) quarantineExpired() bool {
 	if err != nil {
 		return false
 	}
-	return time.Now().UTC().Truncate(24*time.Hour).After(t)
+	return time.Now().UTC().Truncate(24 * time.Hour).After(t)
 }
 
 // AnnotateResults applies the baseline to model.Results from a contract run.

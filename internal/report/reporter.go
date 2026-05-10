@@ -10,10 +10,10 @@ type Reporter interface {
 }
 
 type summary struct {
-	Total        int
-	Passed       int
-	Failed       int
-	Skipped      int
+	Total       int
+	Passed      int
+	Failed      int
+	Skipped     int
 	Quarantined int
 }
 
