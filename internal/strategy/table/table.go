@@ -81,9 +81,12 @@ type caseInputEntry struct {
 type caseExpectedEntry struct {
 	StatusCode int               `yaml:"status_code"`
 	Headers    map[string]string `yaml:"headers"`
-	// Schema is an inline JSON-schema-shaped object (same shape as OpenAPI components).
-	// Decoded via JSON round-trip into model.SchemaRef so nested keys match json tags.
-	Schema any `yaml:"schema,omitempty"`
+	Schema     any               `yaml:"schema,omitempty"`
+
+	GQLData       map[string]any `yaml:"gql_data,omitempty"`
+	GQLNoErrors   *bool          `yaml:"gql_no_errors,omitempty"`
+	GQLHasErrors  *bool          `yaml:"gql_has_errors,omitempty"`
+	GQLDataSchema any            `yaml:"gql_data_schema,omitempty"`
 }
 
 // Plan loads cases from the YAML file specified in spec.Config["file"].
@@ -131,6 +134,22 @@ func (s *tableStrategy) Plan(_ context.Context, spec strategy.Spec, _ []model.Op
 					return nil, fmt.Errorf("case %q: expected.schema: %w", entry.ID, err)
 				}
 				exp.Schema = sch
+			}
+			if len(entry.Expected.GQLData) > 0 {
+				exp.GQLData = entry.Expected.GQLData
+			}
+			if entry.Expected.GQLNoErrors != nil {
+				exp.GQLNoErrors = entry.Expected.GQLNoErrors
+			}
+			if entry.Expected.GQLHasErrors != nil {
+				exp.GQLHasErrors = entry.Expected.GQLHasErrors
+			}
+			if entry.Expected.GQLDataSchema != nil {
+				sch, err := schemaRefFromYAML(entry.Expected.GQLDataSchema)
+				if err != nil {
+					return nil, fmt.Errorf("case %q: expected.gql_data_schema: %w", entry.ID, err)
+				}
+				exp.GQLDataSchema = sch
 			}
 			c.Expected = exp
 		}
@@ -290,18 +309,25 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 		}
 
 		if c.Input.IsGraphQL() && c.ResolvedOperation != nil {
-			for _, g := range gqlassert.AssertResponse(resp.Body, *c.ResolvedOperation) {
-				class := ""
-				if g.Severity == gqlassert.Warning {
-					class = "graphql_warning"
+			skipGQLAssert := c.Expected != nil && c.Expected.GQLHasErrors != nil && *c.Expected.GQLHasErrors
+			if !skipGQLAssert {
+				for _, g := range gqlassert.AssertResponse(resp.Body, *c.ResolvedOperation) {
+					class := ""
+					if g.Severity == gqlassert.Warning {
+						class = "graphql_warning"
+					}
+					failures = append(failures, model.Failure{
+						Invariant:      model.InvariantGraphQLResponse,
+						Classification: class,
+						Message:        g.Message,
+						Path:           g.Field,
+					})
 				}
-				failures = append(failures, model.Failure{
-					Invariant:      model.InvariantGraphQLResponse,
-					Classification: class,
-					Message:        g.Message,
-					Path:           g.Field,
-				})
 			}
+		}
+
+		if c.Input.IsGraphQL() {
+			failures = append(failures, gqlTableExpectationFailures(resp.Body, c.Expected)...)
 		}
 
 		result.Failures = failures

@@ -1,0 +1,92 @@
+cases:
+  - id: gql-health
+    operation_id: health
+    input:
+      method: POST
+      path: /graphql
+      gql_query: "{ health }"
+    expected:
+      status_code: 200
+      gql_data:
+        health: "ok"
+
+  - id: gql-orders-empty
+    operation_id: orders
+    input:
+      method: POST
+      path: /graphql
+      gql_query: "{ orders { id amount currency status createdAt } }"
+    expected:
+      status_code: 200
+      gql_no_errors: true
+      gql_data_schema:
+        type: object
+        properties:
+          orders:
+            type: array
+            items:
+              type: object
+              required: [id, amount, currency, status, createdAt]
+              properties:
+                id: { type: string }
+                amount: { type: integer }
+                currency: { type: string }
+                status:
+                  type: string
+                  enum: [PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED]
+                createdAt: { type: string }
+
+  - id: gql-create-order
+    operation_id: createOrder
+    input:
+      method: POST
+      path: /graphql
+      gql_query: |
+        mutation CreateOrder($input: CreateOrderInput!) {
+          createOrder(input: $input) { id amount currency status createdAt }
+        }
+      gql_operation_name: CreateOrder
+      gql_variables:
+        input:
+          amount: 100
+          currency: GBP
+          description: Integration test order
+    expected:
+      status_code: 200
+      gql_no_errors: true
+      gql_data_schema:
+        type: object
+        required: [createOrder]
+        properties:
+          createOrder:
+            type: object
+            required: [id, amount, currency, status, createdAt]
+            properties:
+              id: { type: string }
+              amount: { type: integer }
+              currency: { type: string }
+              status: { type: string, enum: [PENDING] }
+              createdAt: { type: string }
+
+  - id: gql-create-order-missing-currency
+    operation_id: createOrder
+    input:
+      method: POST
+      path: /graphql
+      gql_query: |
+        mutation { createOrder(input: { amount: 100 }) { id } }
+    expected:
+      status_code: 200
+      gql_has_errors: true
+
+  - id: gql-order-not-found
+    operation_id: order
+    input:
+      method: POST
+      path: /graphql
+      gql_query: |
+        query { order(id: "does-not-exist") { id amount } }
+    expected:
+      status_code: 200
+      gql_data:
+        order: null
