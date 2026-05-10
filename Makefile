@@ -1,4 +1,4 @@
-.PHONY: test lint precommit bt orders-api run-orders-api run-bt-orders run-bt-orders-property run-integration-local
+.PHONY: test lint precommit integration bt orders-api run-orders-api run-bt-orders run-bt-orders-property run-integration-local
 
 test:
 	go test ./... -race
@@ -8,8 +8,11 @@ lint:
 	golangci-lint fmt
 	golangci-lint run
 
-# Lint + race tests (used by .githooks/pre-commit).
-precommit: lint test
+# Lint + race tests + orders-api integration (table, property, fuzz — CI parity). Used by .githooks/pre-commit.
+precommit: lint test integration
+
+# Alias: same recipe as run-integration-local (start orders-api, run bt strategies).
+integration: run-integration-local
 
 bt:
 	go build -o bt ./cmd/bt
@@ -29,7 +32,7 @@ run-bt-orders: bt
 run-bt-orders-property: bt
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property
 
-# One-shot: build, start orders-api in the background, run bt, then stop the API.
+# One-shot: build, start orders-api in the background, run table + property + fuzz (matches CI smoke), then stop the API.
 run-integration-local: bt orders-api
 	set -e; \
 	./orders-api & pid=$$!; \
@@ -40,4 +43,5 @@ run-integration-local: bt orders-api
 	done; \
 	curl -sf http://localhost:$${PORT:-8080}/health >/dev/null; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table; \
-	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property; \
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy fuzz --safety safe --fuzz-iterations 20
