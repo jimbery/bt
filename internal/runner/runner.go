@@ -65,11 +65,18 @@ func (r *Runner) Run(ctx context.Context, input model.CaseInput) (model.Response
 
 	var bodyReader io.Reader
 	if input.Body != nil {
-		data, err := json.Marshal(input.Body)
-		if err != nil {
-			return model.ResponseDetail{}, fmt.Errorf("cannot marshal body: %w", err)
+		switch b := input.Body.(type) {
+		case json.RawMessage:
+			if len(b) > 0 {
+				bodyReader = bytes.NewReader([]byte(b))
+			}
+		default:
+			data, err := json.Marshal(input.Body)
+			if err != nil {
+				return model.ResponseDetail{}, fmt.Errorf("cannot marshal body: %w", err)
+			}
+			bodyReader = bytes.NewReader(data)
 		}
-		bodyReader = bytes.NewReader(data)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, input.Method, u.String(), bodyReader)

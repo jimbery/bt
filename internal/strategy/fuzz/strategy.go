@@ -282,28 +282,20 @@ func mergeSeedWithOperation(seed mutate.Input, op model.Operation) mutate.Input 
 	return out
 }
 
-// builtinSeedCorpus returns one seed per HTTP method allowed by the enforcer (M5),
-// each using this operation's resolved path.
+// builtinSeedCorpus returns a single seed using this operation's declared HTTP method
+// (from OpenAPI) and resolved path. We only fuzz the method the operation actually
+// defines — sending POST/PATCH to a GET-only path produces 405s that are noise for
+// this strategy and break CI smoke runs.
 func builtinSeedCorpus(enf *safety.Enforcer, op model.Operation) []mutate.Input {
 	path := fillPathParams(op)
-	methods := []string{"GET", "POST", "PATCH", "PUT", "DELETE", "HEAD", "OPTIONS"}
-	var out []mutate.Input
-	seen := make(map[string]struct{})
-	for _, m := range methods {
-		u := strings.ToUpper(strings.TrimSpace(m))
-		if _, ok := seen[u]; ok {
-			continue
-		}
-		if !enf.Allow(m) {
-			continue
-		}
-		seen[u] = struct{}{}
-		out = append(out, seedInputForMethod(u, path))
+	m := strings.ToUpper(strings.TrimSpace(op.Method))
+	if m == "" {
+		m = "GET"
 	}
-	if len(out) == 0 {
-		return []mutate.Input{seedInputForMethod(strings.ToUpper(strings.TrimSpace(op.Method)), path)}
+	if !enf.Allow(m) {
+		return nil
 	}
-	return out
+	return []mutate.Input{seedInputForMethod(m, path)}
 }
 
 func seedInputForMethod(method, path string) mutate.Input {
