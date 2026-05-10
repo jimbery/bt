@@ -357,6 +357,158 @@ func TestBrokenEndpoint_NonExistentID_StillResponds200(t *testing.T) {
 	}
 }
 
+func TestDeleteOrder_WithConfirmHeader_Returns204(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	body := bytes.NewBufferString(`{"amount":10,"currency":"GBP"}`)
+	createResp, err := http.Post(srv.URL+"/orders", "application/json", body)
+	if err != nil {
+		t.Fatalf("cannot create order: %v", err)
+	}
+	defer func() { _ = createResp.Body.Close() }()
+	var created map[string]any
+	if err := json.NewDecoder(createResp.Body).Decode(&created); err != nil {
+		t.Fatalf("decode create: %v", err)
+	}
+	id, _ := created["id"].(string)
+	if id == "" {
+		t.Fatal("expected id in create response")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, srv.URL+"/orders/"+id, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("X-Confirm-Delete", "yes")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("DELETE request failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusNoContent {
+		t.Errorf("expected 204, got %d", resp.StatusCode)
+	}
+}
+
+func TestDeleteOrder_WithoutConfirmHeader_Returns400(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	req, err := http.NewRequest(http.MethodDelete, srv.URL+"/orders/ord-001", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("DELETE request failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400 without confirm header, got %d", resp.StatusCode)
+	}
+
+	var respBody map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if respBody["code"] != "MISSING_CONFIRM" {
+		t.Errorf("expected error code MISSING_CONFIRM, got %v", respBody["code"])
+	}
+}
+
+func TestDeleteOrder_Returns400_ResponseSchema(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	req, err := http.NewRequest(http.MethodDelete, srv.URL+"/orders/anything", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("DELETE request failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var respBody map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
+		t.Fatalf("response body is not valid JSON: %v", err)
+	}
+	if _, ok := respBody["error"].(string); !ok {
+		t.Error("expected 'error' string field in 400 response")
+	}
+	if _, ok := respBody["code"].(string); !ok {
+		t.Error("expected 'code' string field in 400 response")
+	}
+}
+
+func TestAdminDeleteCount_ReflectsDeleteAttempts(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/admin/delete-count")
+	if err != nil {
+		t.Fatalf("admin: %v", err)
+	}
+	var initial map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&initial); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	_ = resp.Body.Close()
+	startCount := int(initial["delete_attempts"].(float64))
+
+	req, err := http.NewRequest(http.MethodDelete, srv.URL+"/orders/ord-001", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = http.DefaultClient.Do(req)
+
+	resp2, err := http.Get(srv.URL + "/admin/delete-count")
+	if err != nil {
+		t.Fatalf("admin: %v", err)
+	}
+	var after map[string]any
+	if err := json.NewDecoder(resp2.Body).Decode(&after); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	_ = resp2.Body.Close()
+	endCount := int(after["delete_attempts"].(float64))
+
+	if endCount != startCount+1 {
+		t.Errorf("expected delete_attempts to increase by 1: start=%d end=%d", startCount, endCount)
+	}
+}
+
+func TestAdminDeleteCount_ResponseSchema(t *testing.T) {
+	srv := newTestServer(t)
+	defer srv.Close()
+
+	resp, err := http.Get(srv.URL + "/admin/delete-count")
+	if err != nil {
+		t.Fatalf("cannot reach /admin/delete-count: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected 200 from /admin/delete-count, got %d", resp.StatusCode)
+	}
+
+	var body map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("response is not valid JSON: %v", err)
+	}
+	count, ok := body["delete_attempts"]
+	if !ok {
+		t.Error("expected 'delete_attempts' field in response")
+	}
+	if _, ok := count.(float64); !ok {
+		t.Errorf("expected 'delete_attempts' to be a number, got %T", count)
+	}
+}
+
 func TestAllEndpoints_ReturnJSONContentType(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()

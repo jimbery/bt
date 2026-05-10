@@ -62,7 +62,9 @@ func NewRouter() http.Handler {
 	mux.HandleFunc("POST /orders", handleCreateOrder(store))
 	mux.HandleFunc("GET /orders/{id}", handleGetOrder(store))
 	mux.HandleFunc("PATCH /orders/{id}", handleUpdateOrder(store))
+	mux.HandleFunc("DELETE /orders/{id}", handleDeleteOrder(store))
 	mux.HandleFunc("GET /orders/{id}/broken", handleBrokenOrder(store))
+	mux.HandleFunc("GET /admin/delete-count", handleAdminDeleteCount)
 
 	return mux
 }

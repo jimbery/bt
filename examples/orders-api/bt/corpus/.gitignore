@@ -1,0 +1,6 @@
+# Fuzz writes interesting inputs as <sha64>.json here; only human-named seeds are tracked.
+*.json
+!create-valid-order.json
+!create-minimal-order.json
+!get-order.json
+!list-orders-with-filter.json
