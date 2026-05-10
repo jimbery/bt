@@ -4,7 +4,7 @@
 # from the repository root, matching CI.)
 version: 1
 
-baseline: .bt/baseline.yaml
+baseline: baseline.yaml
 
 target:
   name: orders-api

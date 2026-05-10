@@ -1,0 +1,4 @@
+version: 1
+quarantined:
+  - operation_id: GetOrderBroken
+    reason: "Intentional schema violation — example endpoint for quarantine and replay tests."
