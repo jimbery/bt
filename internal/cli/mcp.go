@@ -33,5 +33,6 @@ func newMcpCmd() *cobra.Command {
 	}
 	serve.Flags().String("config", "backendtest.yaml", "default config path when tools omit config_path")
 	mcp.AddCommand(serve)
+	mcp.AddCommand(newMcpCallCmd())
 	return mcp
 }

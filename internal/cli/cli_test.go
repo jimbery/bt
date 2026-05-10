@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -96,5 +97,79 @@ func TestValidateCommand_MissingFile(t *testing.T) {
 	cmd.SetArgs([]string{"validate", "--config", "/nonexistent/backendtest.yaml"})
 	if err := cmd.Execute(); err == nil {
 		t.Error("expected validate to fail for missing config file")
+	}
+}
+
+func TestValidateCommand_JSONOutput_ValidConfig(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "backendtest.yaml")
+	yaml := "version: 1\ntarget:\n  name: orders-api\n  base_url: https://staging.example.com\n  schema: ./openapi.yaml\n"
+	if err := os.WriteFile(configPath, []byte(yaml), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	buf := &bytes.Buffer{}
+	cmd := cli.NewRootCmd()
+	cmd.SetArgs([]string{"validate", "--config", configPath, "--output", "json"})
+	cmd.SetOut(buf)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("validate: %v", err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, buf.String())
+	}
+	if v, ok := got["valid"].(bool); !ok || !v {
+		t.Fatalf("expected valid=true, got %v", got)
+	}
+}
+
+func TestValidateCommand_JSONOutput_InvalidConfig(t *testing.T) {
+	t.Parallel()
+	dir := t.TempDir()
+	configPath := filepath.Join(dir, "backendtest.yaml")
+	yaml := "version: 1\ntarget:\n  base_url: https://staging.example.com\n"
+	if err := os.WriteFile(configPath, []byte(yaml), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	buf := &bytes.Buffer{}
+	cmd := cli.NewRootCmd()
+	cmd.SetArgs([]string{"validate", "--config", configPath, "--output", "json"})
+	cmd.SetOut(buf)
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("expected validate to fail for invalid config")
+	}
+	var got map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, buf.String())
+	}
+	if v, ok := got["valid"].(bool); !ok || v {
+		t.Fatalf("expected valid=false, got %v", got)
+	}
+}
+
+func TestValidateCommand_JSONOutput_MissingFile(t *testing.T) {
+	t.Parallel()
+	buf := &bytes.Buffer{}
+	cmd := cli.NewRootCmd()
+	cmd.SetArgs([]string{"validate", "--config", "/nonexistent/backendtest.yaml", "--output", "json"})
+	cmd.SetOut(buf)
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("expected error for missing file")
+	}
+	var got map[string]any
+	if err := json.Unmarshal(buf.Bytes(), &got); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, buf.String())
+	}
+	if v, ok := got["valid"].(bool); !ok || v {
+		t.Fatalf("expected valid=false, got %v", got)
+	}
+	errs, ok := got["errors"].([]any)
+	if !ok || len(errs) == 0 {
+		t.Fatalf("expected errors array, got %v", got)
 	}
 }
