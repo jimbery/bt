@@ -36,6 +36,15 @@ type Options struct {
 	// GQLExecutor runs GraphQL cases when CaseInput.IsGraphQL() is true.
 	// If nil, GraphQL cases fail with a clear configuration error.
 	GQLExecutor strategy.Executor
+
+	// DefaultHeaders are merged into each request before execution (for example
+	// Authorization from target.auth). Per-case input.headers override the same key.
+	DefaultHeaders map[string]string
+
+	// AuthDebugEnvName is the name of the process env var from target.auth.env
+	// (when set). Used only for failure artifacts so you can see whether that var
+	// was non-empty when bt ran — never stores the secret value.
+	AuthDebugEnvName string
 }
 
 type tableStrategy struct {
@@ -185,30 +194,72 @@ func cloneStringMap(m map[string]string) map[string]string {
 	return out
 }
 
-func requestDetailFromCase(c model.Case) model.RequestDetail {
-	rd := model.RequestDetail{
-		Method:  c.Input.Method,
-		URL:     c.Input.Path,
-		Headers: cloneStringMap(c.Input.Headers),
-		Query:   cloneStringMap(c.Input.Query),
+func mergeCaseInputHeaders(in model.CaseInput, defaults map[string]string) model.CaseInput {
+	if len(defaults) == 0 {
+		return in
 	}
-	if c.Input.IsGraphQL() {
-		m := map[string]any{"query": c.Input.GQLQuery}
-		if strings.TrimSpace(c.Input.GQLOperationName) != "" {
-			m["operationName"] = c.Input.GQLOperationName
+	out := in
+	merged := make(map[string]string, len(defaults)+len(in.Headers))
+	for k, v := range defaults {
+		merged[http.CanonicalHeaderKey(k)] = v
+	}
+	for k, v := range in.Headers {
+		merged[http.CanonicalHeaderKey(k)] = v
+	}
+	out.Headers = merged
+	return out
+}
+
+func requestDetailFromInput(in model.CaseInput) model.RequestDetail {
+	rd := model.RequestDetail{
+		Method:  in.Method,
+		URL:     in.Path,
+		Headers: cloneStringMap(in.Headers),
+		Query:   cloneStringMap(in.Query),
+	}
+	if in.IsGraphQL() {
+		m := map[string]any{"query": in.GQLQuery}
+		if strings.TrimSpace(in.GQLOperationName) != "" {
+			m["operationName"] = in.GQLOperationName
 		}
-		if c.Input.GQLVariables != nil {
-			m["variables"] = c.Input.GQLVariables
+		if in.GQLVariables != nil {
+			m["variables"] = in.GQLVariables
 		}
 		if b, err := json.Marshal(m); err == nil {
 			rd.Body = b
 		}
-	} else if c.Input.Body != nil {
-		if b, err := json.Marshal(c.Input.Body); err == nil {
+	} else if in.Body != nil {
+		if b, err := json.Marshal(in.Body); err == nil {
 			rd.Body = b
 		}
 	}
 	return rd
+}
+
+func redactAuthorizationHeader(v string) string {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return ""
+	}
+	if strings.HasPrefix(strings.ToLower(v), "bearer ") {
+		return "Bearer <redacted>"
+	}
+	return "<redacted>"
+}
+
+func artifactRequestSnapshot(rd model.RequestDetail) model.RequestDetail {
+	if len(rd.Headers) == 0 {
+		return rd
+	}
+	out := rd
+	out.Headers = cloneStringMap(rd.Headers)
+	for k, v := range out.Headers {
+		if http.CanonicalHeaderKey(k) != "Authorization" || v == "" {
+			continue
+		}
+		out.Headers[k] = redactAuthorizationHeader(v)
+	}
+	return out
 }
 
 // Execute runs each case through the executor and evaluates assertions.
@@ -216,6 +267,8 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 	results := make([]model.Result, 0, len(cases))
 
 	for _, c := range cases {
+		execInput := mergeCaseInputHeaders(c.Input, s.opts.DefaultHeaders)
+
 		if c.Input.IsGraphQL() && c.ResolvedOperation != nil && c.ResolvedOperation.GQLKind == model.GQLSubscription {
 			failures := []model.Failure{{
 				Invariant: model.InvariantGraphQLResponse,
@@ -225,23 +278,7 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 				CaseID:       c.ID,
 				Passed:       false,
 				StrategyKind: string(strategy.KindTable),
-				Request:      requestDetailFromCase(c),
-				Response:     model.ResponseDetail{},
-				Failures:     failures,
-			})
-			continue
-		}
-
-		if c.Input.IsGraphQL() && s.opts.GQLExecutor == nil {
-			failures := []model.Failure{{
-				Invariant: model.InvariantGraphQLResponse,
-				Message:   "graphql cases require a GraphQL executor — configure adapter: graphql in backendtest.yaml",
-			}}
-			results = append(results, model.Result{
-				CaseID:       c.ID,
-				Passed:       false,
-				StrategyKind: string(strategy.KindTable),
-				Request:      requestDetailFromCase(c),
+				Request:      requestDetailFromInput(execInput),
 				Response:     model.ResponseDetail{},
 				Failures:     failures,
 			})
@@ -252,9 +289,13 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 		var resp model.ResponseDetail
 		var err error
 		if c.Input.IsGraphQL() {
-			resp, err = s.opts.GQLExecutor.Run(ctx, c.Input)
+			if s.opts.GQLExecutor != nil {
+				resp, err = s.opts.GQLExecutor.Run(ctx, execInput)
+			} else {
+				resp, err = exec.Run(ctx, execInput)
+			}
 		} else {
-			resp, err = exec.Run(ctx, c.Input)
+			resp, err = exec.Run(ctx, execInput)
 		}
 		dur := time.Since(start)
 		if err != nil {
@@ -266,7 +307,7 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 			StatusCode:   resp.StatusCode,
 			Duration:     dur,
 			Response:     resp,
-			Request:      requestDetailFromCase(c),
+			Request:      requestDetailFromInput(execInput),
 			StrategyKind: string(strategy.KindTable),
 		}
 
@@ -311,7 +352,15 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 		if c.Input.IsGraphQL() && c.ResolvedOperation != nil {
 			skipGQLAssert := c.Expected != nil && c.Expected.GQLHasErrors != nil && *c.Expected.GQLHasErrors
 			if !skipGQLAssert {
-				for _, g := range gqlassert.AssertResponse(resp.Body, *c.ResolvedOperation) {
+				// When the case supplies gql_data_schema, shape is asserted there against the
+				// actual response. Skip the adapter-derived GQLSelectionSchema check — it reflects
+				// the full GraphQL return type from SDL, while table cases often send a narrower
+				// gql_query than the discovered minimal document.
+				opAssert := *c.ResolvedOperation
+				if c.Expected != nil && c.Expected.GQLDataSchema != nil {
+					opAssert.GQLSelectionSchema = nil
+				}
+				for _, g := range gqlassert.AssertResponse(resp.Body, opAssert) {
 					class := ""
 					if g.Severity == gqlassert.Warning {
 						class = "graphql_warning"
@@ -340,10 +389,14 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 				CaseID:       c.ID,
 				OccurredAt:   time.Now().UTC(),
 				Environment:  s.opts.Environment,
-				Request:      result.Request,
+				Request:      artifactRequestSnapshot(result.Request),
 				Response:     resp,
 				Failures:     failures,
 				Expected:     c.Expected,
+			}
+			if env := strings.TrimSpace(s.opts.AuthDebugEnvName); env != "" {
+				artifact.AuthEnvName = env
+				artifact.AuthEnvSetInProcess = strings.TrimSpace(os.Getenv(env)) != ""
 			}
 			artifactPath, writeErr := s.opts.ArtifactWriter.Write(artifact)
 			if writeErr != nil {

@@ -52,10 +52,15 @@ func TestTableStrategy_GraphQLCase_RoutedToGQLExecutor(t *testing.T) {
 	}
 }
 
-func TestTableStrategy_GraphQLCase_NoGQLExecutor_FailsWithClearMessage(t *testing.T) {
+func TestTableStrategy_GraphQLCase_RoutedToPassedInExecutorWhenGQLExecutorNil(t *testing.T) {
 	t.Parallel()
 	s := table.NewWithOptions(table.Options{GQLExecutor: nil})
-	restExec := &fakeExecutor{response: model.ResponseDetail{StatusCode: 200}}
+	restExec := &fakeExecutor{
+		response: model.ResponseDetail{
+			StatusCode: 200,
+			Body:       []byte(`{"data":{"ping":"pong"}}`),
+		},
+	}
 	cases := []model.Case{
 		{
 			ID: "gql-ping",
@@ -70,15 +75,116 @@ func TestTableStrategy_GraphQLCase_NoGQLExecutor_FailsWithClearMessage(t *testin
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
+	if !results[0].Passed {
+		t.Errorf("expected GraphQL case to use exec when GQLExecutor is nil, failures: %v", results[0].Failures)
+	}
+}
+
+func TestTableStrategy_GraphQL_skipsSDLSelectionAssertWhenGQLDataSchemaSet(t *testing.T) {
+	t.Parallel()
+	// Discovered op shape (full User) would require fields not returned by the case's narrower query.
+	fullSel := &model.SchemaRef{
+		Type:     "object",
+		Required: []string{"id", "email", "extraField"},
+		Properties: map[string]*model.SchemaRef{
+			"id":         {Type: "string"},
+			"email":      {Type: "string"},
+			"extraField": {Type: "string"},
+		},
+	}
+	op := model.Operation{
+		ID:                 "me",
+		GQLDocument:        `query { me { id email extraField } }`,
+		GQLSelectionSchema: fullSel,
+	}
+	noErr := true
+	meSchema := &model.SchemaRef{
+		Type:     "object",
+		Required: []string{"me"},
+		Properties: map[string]*model.SchemaRef{
+			"me": {
+				Type:     "object",
+				Required: []string{"id"},
+				Properties: map[string]*model.SchemaRef{
+					"id":    {Type: "string"},
+					"email": {Type: "string"},
+				},
+			},
+		},
+	}
+	cases := []model.Case{
+		{
+			ID: "partial-me",
+			Input: model.CaseInput{
+				Method:   "POST",
+				Path:     "/graphql",
+				GQLQuery: `{ me { id email } }`,
+			},
+			Expected: &model.CaseExpectation{
+				GQLNoErrors:   &noErr,
+				GQLDataSchema: meSchema,
+			},
+			ResolvedOperation: &op,
+		},
+	}
+	exec := &fakeExecutor{
+		response: model.ResponseDetail{
+			StatusCode: 200,
+			Body:       []byte(`{"data":{"me":{"id":"u-1","email":"x@example.com"}}}`),
+		},
+	}
+	s := table.NewWithOptions(table.Options{GQLExecutor: nil})
+	results, err := s.Execute(context.Background(), cases, exec)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !results[0].Passed {
+		t.Fatalf("expected pass when gql_data_schema overrides full SDL selection; failures: %v", results[0].Failures)
+	}
+}
+
+func TestTableStrategy_GraphQL_enforcesSDLSelectionWhenNoGQLDataSchema(t *testing.T) {
+	t.Parallel()
+	fullSel := &model.SchemaRef{
+		Type:     "object",
+		Required: []string{"id", "email", "extraField"},
+		Properties: map[string]*model.SchemaRef{
+			"id":         {Type: "string"},
+			"email":      {Type: "string"},
+			"extraField": {Type: "string"},
+		},
+	}
+	op := model.Operation{
+		ID:                 "me",
+		GQLDocument:        `query { me { id email extraField } }`,
+		GQLSelectionSchema: fullSel,
+	}
+	noErr := true
+	cases := []model.Case{
+		{
+			ID: "partial-me",
+			Input: model.CaseInput{
+				Method:   "POST",
+				Path:     "/graphql",
+				GQLQuery: `{ me { id email } }`,
+			},
+			Expected:          &model.CaseExpectation{GQLNoErrors: &noErr},
+			ResolvedOperation: &op,
+		},
+	}
+	exec := &fakeExecutor{
+		response: model.ResponseDetail{
+			StatusCode: 200,
+			Body:       []byte(`{"data":{"me":{"id":"u-1","email":"x@example.com"}}}`),
+		},
+	}
+	s := table.NewWithOptions(table.Options{GQLExecutor: nil})
+	results, err := s.Execute(context.Background(), cases, exec)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if results[0].Passed {
-		t.Error("expected GraphQL case to fail when no GQL executor is configured")
-	}
-	if len(results[0].Failures) == 0 {
-		t.Error("expected at least one failure explaining the missing executor")
-	}
-	msg := results[0].Failures[0].Message
-	if msg == "" {
-		t.Error("failure message must be non-empty")
+		t.Fatal("expected failure when SDL selection schema requires fields missing from response")
 	}
 }
 

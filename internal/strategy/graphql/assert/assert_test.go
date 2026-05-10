@@ -170,3 +170,25 @@ func TestAssertResponse_NoSelectionSchema_OnlyEnvelopeChecked(t *testing.T) {
 		t.Errorf("expected no failures when no selection schema is set, got: %v", failures)
 	}
 }
+
+func TestAssertResponse_nullSelectionSkipsSchemaCheck(t *testing.T) {
+	t.Parallel()
+	op := model.Operation{
+		ID:      "widget",
+		GQLKind: model.GQLQuery,
+		GQLSelectionSchema: &model.SchemaRef{
+			Type: "object",
+			Properties: map[string]*model.SchemaRef{
+				"id": {Type: "string", Nullable: false},
+			},
+			Required: []string{"id"},
+		},
+	}
+	body := []byte(`{"data":{"widget":null}}`)
+	failures := gqlassert.AssertResponse(body, op)
+	for _, f := range failures {
+		if f.Severity == gqlassert.Critical {
+			t.Errorf("unexpected critical failure for null selection: %+v", f)
+		}
+	}
+}

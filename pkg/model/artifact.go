@@ -15,4 +15,8 @@ type Artifact struct {
 	// Expected is set for table-strategy artifacts when the case had expectations (used by replay for response_matches_schema).
 	Expected    *CaseExpectation `json:"expected,omitempty"`
 	ShrinkTrace []string         `json:"shrink_trace,omitempty"`
+	// AuthEnvName, when set, names the process env var from target.auth.env.
+	// AuthEnvSetInProcess is true if that variable was non-empty when the case ran.
+	AuthEnvName         string `json:"auth_env_name,omitempty"`
+	AuthEnvSetInProcess bool   `json:"auth_env_set_in_process,omitempty"`
 }

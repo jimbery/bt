@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"math/rand"
+	"reflect"
 	"strings"
 	"unicode"
 
@@ -18,6 +19,9 @@ type Input struct {
 	Query   map[string]string `json:"query"`
 	Headers map[string]string `json:"headers"`
 	Body    []byte            `json:"body"`
+
+	GQLQuery     string         `json:"gql_query,omitempty"`
+	GQLVariables map[string]any `json:"gql_variables,omitempty"`
 }
 
 // Mutator transforms a seed input using randomness from r.
@@ -48,6 +52,21 @@ func cloneInput(seed Input) Input {
 	if len(seed.Body) > 0 {
 		out.Body = append([]byte(nil), seed.Body...)
 	}
+	out.GQLQuery = seed.GQLQuery
+	if seed.GQLVariables != nil {
+		out.GQLVariables = cloneAnyMap(seed.GQLVariables)
+	}
+	return out
+}
+
+func cloneAnyMap(m map[string]any) map[string]any {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		out[k] = v
+	}
 	return out
 }
 
@@ -61,6 +80,40 @@ func NewPayloadMutator() Mutator { return payloadMutator{} }
 func (payloadMutator) Name() string { return "payload" }
 
 func (payloadMutator) Mutate(seed Input, r *rand.Rand) Input {
+	if strings.TrimSpace(seed.GQLQuery) != "" {
+		in := cloneInput(seed)
+		q := in.GQLQuery
+		switch r.Intn(6) {
+		case 0, 1:
+			if len(q) > 2 {
+				cut := 1 + r.Intn(len(q)-1)
+				in.GQLQuery = q[:cut]
+			}
+		case 2:
+			in.GQLQuery = q + "}"
+		case 3:
+			in.GQLQuery = ""
+		case 4:
+			if in.GQLVariables == nil {
+				in.GQLVariables = map[string]any{}
+			} else {
+				in.GQLVariables = cloneAnyMap(in.GQLVariables)
+			}
+			in.GQLVariables["_fuzz"] = strings.Repeat("x", 128)
+		default:
+			if len(q) > 0 {
+				pos := r.Intn(len(q))
+				b := byte('a' + r.Intn(26))
+				if pos+1 >= len(q) {
+					in.GQLQuery = q[:pos] + string(b)
+				} else {
+					in.GQLQuery = q[:pos] + string(b) + q[pos+1:]
+				}
+			}
+		}
+		return in
+	}
+
 	in := cloneInput(seed)
 	if len(in.Body) == 0 {
 		return in
@@ -358,6 +411,28 @@ func (s *MutatorSet) MutateAll(seed Input, r *rand.Rand) []Input {
 
 // CaseInputFrom converts Input into model.CaseInput for the HTTP runner.
 func CaseInputFrom(in Input) model.CaseInput {
+	if strings.TrimSpace(in.GQLQuery) != "" {
+		ci := model.CaseInput{
+			Method:       in.Method,
+			Path:         in.Path,
+			GQLQuery:     strings.TrimSpace(in.GQLQuery),
+			GQLVariables: cloneAnyMap(in.GQLVariables),
+		}
+		if len(in.Query) > 0 {
+			ci.Query = make(map[string]string, len(in.Query))
+			for k, v := range in.Query {
+				ci.Query[k] = v
+			}
+		}
+		if len(in.Headers) > 0 {
+			ci.Headers = make(map[string]string, len(in.Headers))
+			for k, v := range in.Headers {
+				ci.Headers[k] = v
+			}
+		}
+		return ci
+	}
+
 	ci := model.CaseInput{
 		Method: in.Method,
 		Path:   in.Path,
@@ -407,17 +482,21 @@ func InputFromCaseInput(method, path string, query, headers map[string]string, b
 // MarshalJSON implements custom JSON for stable corpus hashing.
 func (in Input) MarshalJSON() ([]byte, error) {
 	type aux struct {
-		Method  string            `json:"method"`
-		Path    string            `json:"path"`
-		Query   map[string]string `json:"query"`
-		Headers map[string]string `json:"headers"`
-		Body    any               `json:"body"`
+		Method       string            `json:"method"`
+		Path         string            `json:"path"`
+		Query        map[string]string `json:"query"`
+		Headers      map[string]string `json:"headers"`
+		Body         any               `json:"body"`
+		GQLQuery     string            `json:"gql_query,omitempty"`
+		GQLVariables map[string]any    `json:"gql_variables,omitempty"`
 	}
 	a := aux{
-		Method:  in.Method,
-		Path:    in.Path,
-		Query:   in.Query,
-		Headers: in.Headers,
+		Method:       in.Method,
+		Path:         in.Path,
+		Query:        in.Query,
+		Headers:      in.Headers,
+		GQLQuery:     in.GQLQuery,
+		GQLVariables: in.GQLVariables,
 	}
 	switch {
 	case len(in.Body) == 0:
@@ -434,11 +513,13 @@ func (in Input) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON loads Input from corpus JSON.
 func (in *Input) UnmarshalJSON(data []byte) error {
 	type aux struct {
-		Method  string            `json:"method"`
-		Path    string            `json:"path"`
-		Query   map[string]string `json:"query"`
-		Headers map[string]string `json:"headers"`
-		Body    json.RawMessage   `json:"body"`
+		Method       string            `json:"method"`
+		Path         string            `json:"path"`
+		Query        map[string]string `json:"query"`
+		Headers      map[string]string `json:"headers"`
+		Body         json.RawMessage   `json:"body"`
+		GQLQuery     string            `json:"gql_query"`
+		GQLVariables map[string]any    `json:"gql_variables"`
 	}
 	var a aux
 	if err := json.Unmarshal(data, &a); err != nil {
@@ -448,6 +529,8 @@ func (in *Input) UnmarshalJSON(data []byte) error {
 	in.Path = a.Path
 	in.Query = a.Query
 	in.Headers = a.Headers
+	in.GQLQuery = a.GQLQuery
+	in.GQLVariables = a.GQLVariables
 	if len(a.Body) == 0 || string(a.Body) == "null" {
 		return nil
 	}
@@ -465,7 +548,8 @@ func (in *Input) UnmarshalJSON(data []byte) error {
 func Equal(a, b Input) bool {
 	return a.Method == b.Method && a.Path == b.Path &&
 		mapsEqual(a.Query, b.Query) && mapsEqual(a.Headers, b.Headers) &&
-		bytes.Equal(a.Body, b.Body)
+		bytes.Equal(a.Body, b.Body) && a.GQLQuery == b.GQLQuery &&
+		reflect.DeepEqual(a.GQLVariables, b.GQLVariables)
 }
 
 // Clone returns a deep copy of in.

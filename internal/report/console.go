@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 
 	"github.com/jayimbery/bt/pkg/model"
 )
@@ -60,6 +61,9 @@ func (r *consoleReporter) Write(results []model.Result) error {
 				_, _ = fmt.Fprintf(r.w, "       artifact: %s\n", res.ArtifactPath)
 				_, _ = fmt.Fprintf(r.w, "       replay:   bt replay %s\n", filepath.ToSlash(res.ArtifactPath))
 			}
+			if !res.Passed {
+				writeFailureResponseBody(r.w, res.Response.Body)
+			}
 			continue
 		}
 
@@ -80,6 +84,9 @@ func (r *consoleReporter) Write(results []model.Result) error {
 			_, _ = fmt.Fprintf(r.w, "       artifact: %s\n", res.ArtifactPath)
 			_, _ = fmt.Fprintf(r.w, "       replay:   bt replay %s\n", filepath.ToSlash(res.ArtifactPath))
 		}
+		if !res.Passed {
+			writeFailureResponseBody(r.w, res.Response.Body)
+		}
 	}
 
 	s := summarise(results)
@@ -99,6 +106,20 @@ func (r *consoleReporter) Write(results []model.Result) error {
 	}
 	_, _ = fmt.Fprintf(r.w, "%s\n", line)
 	return nil
+}
+
+func writeFailureResponseBody(w io.Writer, body []byte) {
+	if len(body) == 0 {
+		return
+	}
+	txt := FailureBodyForDisplay(body)
+	if txt == "" {
+		return
+	}
+	_, _ = fmt.Fprintln(w, "       response body:")
+	for _, line := range strings.Split(txt, "\n") {
+		_, _ = fmt.Fprintf(w, "         %s\n", line)
+	}
 }
 
 // ConsoleReporter is the concrete M5 console reporter; use [NewConsoleReporter] when calling [ConsoleReporter.Render].

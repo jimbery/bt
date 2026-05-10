@@ -16,6 +16,7 @@ import (
 
 	"pgregory.net/rapid"
 
+	"github.com/jayimbery/bt/internal/gqlcase"
 	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/internal/strategy/property/gen"
 	"github.com/jayimbery/bt/internal/strategy/property/invariant"
@@ -241,6 +242,29 @@ func wantsInvariantName(invs []model.Invariant, name string) bool {
 }
 
 func buildCaseInput(t *rapid.T, op model.Operation, c model.Case, invs []model.Invariant) model.CaseInput {
+	if gqlcase.IsGraphQLOperation(op) {
+		in := gqlcase.MinimalInput(op)
+		if len(op.GQLVariableTypes) > 0 {
+			in.GQLVariables = make(map[string]any, len(op.GQLVariableTypes))
+			for name, sch := range op.GQLVariableTypes {
+				if sch == nil {
+					in.GQLVariables[name] = nil
+					continue
+				}
+				in.GQLVariables[name] = gen.GenForSchema(sch).Draw(t, "gql_"+name)
+			}
+		}
+		if wantsInvariantName(invs, model.InvariantIdempotencyKeyPreventsDupes) {
+			if in.Headers == nil {
+				in.Headers = map[string]string{}
+			}
+			if rapid.Bool().Draw(t, "idem_present") {
+				in.Headers[invariant.HeaderKey()] = fmt.Sprintf("idem-%016x", rapid.Uint64().Draw(t, "idem_key"))
+			}
+		}
+		return in
+	}
+
 	in := c.Input
 	if wantsRequestBody(op.Method) && op.RequestBody != nil {
 		g := gen.GenForSchema(op.RequestBody)

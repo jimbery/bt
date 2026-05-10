@@ -133,6 +133,17 @@ func TestClassify_UndeclaredStatusCode_IsUnexpectedStatus(t *testing.T) {
 	}
 }
 
+func TestClassify_GraphQLUndeclared404_IsPass(t *testing.T) {
+	op := model.Operation{
+		GQLDocument: `query { ping }`,
+		Responses:   []model.ResponseSpec{{StatusCode: 200, Schema: &model.SchemaRef{Type: "object"}}},
+	}
+	got := classify.Classify(resp(404), []byte(`not found`), nil, op)
+	if got != classify.ClassificationPass {
+		t.Errorf("expected pass for graphql op with undeclared 404, got %q", got)
+	}
+}
+
 func TestClassify_DeclaredStatusCode_IsNotUnexpectedStatus(t *testing.T) {
 	got := classify.Classify(resp(400), []byte(`{"error":"bad request","code":"BAD"}`), nil, opWithStatuses(200, 400))
 	if got == classify.ClassificationUnexpectedStatus {
