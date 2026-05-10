@@ -319,19 +319,22 @@ jobs:
           echo "$RESULT" | jq -e '.code == "OPERATION_NOT_FOUND"' > /dev/null
           echo "OK: unknown operation returns structured error"
 
-      # M7.5 — AI-path smoke (optional; never blocks when secret is absent)
-      - name: AI scaffold — real provider smoke test (requires ANTHROPIC_API_KEY)
-        if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+      # M7.5 — AI-path smoke (optional). secrets cannot be used in step `if:`; pass via env and skip in shell when unset.
+      - name: AI scaffold — real provider smoke (optional, ANTHROPIC_API_KEY)
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          echo "API key present — running real AI provider smoke test"
+          if [ -z "${ANTHROPIC_API_KEY}" ]; then
+            echo "Skipping optional AI smoke — ANTHROPIC_API_KEY secret not set or empty"
+            exit 0
+          fi
+          echo "API key present — running real AI provider smoke tests"
 
           RESULT=$(./bt mcp call bt_suggest_invariants \
             --input '{"schema_path":"examples/orders-api/spec/openapi.yaml","operation_id":"CreateOrder"}' \
             --output json)
 
-          echo "AI response:"
+          echo "AI response (suggest_invariants):"
           echo "$RESULT" | jq .
 
           PROVIDER=$(echo "$RESULT" | jq -r '.provider')
@@ -352,11 +355,6 @@ jobs:
 
           echo "OK: real AI provider returned valid structured suggestions with substantive rationale"
 
-      - name: AI scaffold — real provider bt_suggest_strategy (requires ANTHROPIC_API_KEY)
-        if: ${{ secrets.ANTHROPIC_API_KEY != '' }}
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
           RESULT=$(./bt mcp call bt_suggest_strategy \
             --input '{"operations":[
               {"id":"CreateOrder","method":"POST","has_body":true},
@@ -367,7 +365,7 @@ jobs:
 
           PROVIDER=$(echo "$RESULT" | jq -r '.provider')
           if [ "$PROVIDER" != "ai" ]; then
-            echo "FAIL: expected provider=ai, got $PROVIDER"
+            echo "FAIL: expected provider=ai for bt_suggest_strategy, got $PROVIDER"
             exit 1
           fi
 
