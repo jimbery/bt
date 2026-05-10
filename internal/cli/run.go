@@ -3,8 +3,10 @@ package cli
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -14,6 +16,7 @@ import (
 	"github.com/jayimbery/bt/internal/report"
 	"github.com/jayimbery/bt/internal/runner"
 	"github.com/jayimbery/bt/internal/strategy"
+	"github.com/jayimbery/bt/internal/strategy/fuzz"
 	"github.com/jayimbery/bt/internal/strategy/property"
 	"github.com/jayimbery/bt/internal/strategy/table"
 	"github.com/jayimbery/bt/pkg/model"
@@ -57,7 +60,7 @@ func newRunCmd() *cobra.Command {
 				return fmt.Errorf("adapter: %w", err)
 			}
 
-			st, spec, err := buildStrategyAndSpec(cfgPath, strategyName, cfg)
+			st, spec, err := buildStrategyAndSpec(cfgPath, strategyName, cfg, cmd)
 			if err != nil {
 				return err
 			}
@@ -81,6 +84,25 @@ func newRunCmd() *cobra.Command {
 						spec.Config = map[string]any{}
 					}
 					spec.Config["checks"] = checks
+				}
+			}
+			if strategy.Kind(strategyName) == strategy.KindFuzz {
+				if spec.Config == nil {
+					spec.Config = map[string]any{}
+				}
+				if cmd.Flags().Changed("fuzz-iterations") {
+					n, err := cmd.Flags().GetInt("fuzz-iterations")
+					if err != nil {
+						return err
+					}
+					spec.Config["fuzz_iterations"] = n
+				}
+				if cmd.Flags().Changed("corpus-dir") {
+					dir, err := cmd.Flags().GetString("corpus-dir")
+					if err != nil {
+						return err
+					}
+					spec.Config["corpus_dir"] = dir
 				}
 			}
 
@@ -136,7 +158,7 @@ func newRunCmd() *cobra.Command {
 			}
 
 			for _, res := range results {
-				if !res.Passed {
+				if !res.Passed && !res.Skipped {
 					return ErrTestFailures
 				}
 			}
@@ -148,11 +170,33 @@ func newRunCmd() *cobra.Command {
 	cmd.Flags().Int64("seed", 0, "PRNG seed for property strategy (rapid); omit for random seed")
 	cmd.Flags().Int("checks", 0, "number of property checks per operation (rapid); 0 uses default from strategy")
 	cmd.Flags().String("output-file", "", "write report to this path (json/junit only; console also copies when set)")
+	cmd.Flags().String("safety", "", "safety profile override for fuzz strategy: safe, aggressive, destructive")
+	cmd.Flags().Int("fuzz-iterations", 0, "max HTTP attempts per operation for fuzz strategy (0 = use config or default 50)")
+	cmd.Flags().String("corpus-dir", "", "corpus directory for fuzz seeds (default: <config-dir>/corpus)")
 	return cmd
 }
 
-func buildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config) (strategy.Strategy, strategy.Spec, error) {
+func buildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, cmd *cobra.Command) (strategy.Strategy, strategy.Spec, error) {
 	var st strategy.Strategy
+	destructiveConfirmed := cmd != nil && cmd.Flags().Changed("safety")
+	safetyFlag := ""
+	if destructiveConfirmed {
+		safetyFlag, _ = cmd.Flags().GetString("safety")
+		destructiveConfirmed = strings.EqualFold(strings.TrimSpace(safetyFlag), "destructive")
+	}
+	profile := strings.TrimSpace(cfg.Safety.Profile)
+	if cmd != nil && cmd.Flags().Changed("safety") {
+		profile = strings.TrimSpace(safetyFlag)
+	}
+	if strategy.Kind(strategyName) == strategy.KindFuzz {
+		if strings.EqualFold(profile, "destructive") && !destructiveConfirmed {
+			return nil, strategy.Spec{}, fmt.Errorf(`fuzz: profile "destructive" requires passing --safety destructive on the command line`)
+		}
+		if err := validateFuzzSafetyProfileName(profile); err != nil {
+			return nil, strategy.Spec{}, err
+		}
+	}
+
 	switch strategy.Kind(strategyName) {
 	case strategy.KindTable:
 		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
@@ -165,6 +209,21 @@ func buildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config) (str
 		st = property.NewWithOptions(property.Options{
 			ArtifactWriter: replay.NewWriter(artifactDir),
 			Environment:    cfg.Target.Environment,
+		})
+	case strategy.KindFuzz:
+		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
+		fuzzLog := slog.New(slog.NewTextHandler(cmd.OutOrStderr(), &slog.HandlerOptions{Level: slog.LevelInfo}))
+		st = fuzz.NewWithOptions(fuzz.Options{
+			ArtifactWriter:       replay.NewWriter(artifactDir),
+			Environment:          cfg.Target.Environment,
+			SafetyProfile:        profile,
+			AllowedMethods:       append([]string(nil), cfg.Safety.AllowedMethods...),
+			DeniedMethods:        append([]string(nil), cfg.Safety.DenyMethods...),
+			MaxRequestsPerSecond: cfg.Safety.MaxRequestsPerSecond,
+			MaxConcurrency:       cfg.Safety.MaxConcurrency,
+			TimeoutSeconds:       cfg.Safety.TimeoutSeconds,
+			DestructiveConfirmed: destructiveConfirmed,
+			Logger:               fuzzLog,
 		})
 	default:
 		return nil, strategy.Spec{}, fmt.Errorf("unknown strategy: %q", strategyName)
@@ -192,10 +251,24 @@ func buildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config) (str
 		if sc.File != "" {
 			spec.Config["file"] = sc.File
 		}
+		if strategy.Kind(strategyName) == strategy.KindFuzz {
+			if _, ok := spec.Config["corpus_dir"]; !ok || spec.Config["corpus_dir"] == "" {
+				spec.Config["corpus_dir"] = filepath.Join(filepath.Dir(cfgPath), "corpus")
+			}
+		}
 		break
 	}
 	if !found {
 		return nil, strategy.Spec{}, fmt.Errorf("no strategy of type %q found in config", strategyName)
 	}
 	return st, spec, nil
+}
+
+func validateFuzzSafetyProfileName(p string) error {
+	switch strings.ToLower(strings.TrimSpace(p)) {
+	case "", "safe", "aggressive", "destructive":
+		return nil
+	default:
+		return fmt.Errorf("fuzz: unknown safety profile %q (want safe, aggressive, or destructive)", p)
+	}
 }

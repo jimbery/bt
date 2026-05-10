@@ -3,6 +3,7 @@ package runner_test
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -161,5 +162,34 @@ func TestRunner_QueryParams_AppendedToURL(t *testing.T) {
 	}
 	if receivedQuery != "status=pending" {
 		t.Errorf("query string: got %q, want %q", receivedQuery, "status=pending")
+	}
+}
+
+func TestRunner_PostRequest_InvalidJSONAsRawMessage_SendsBytes(t *testing.T) {
+	var received []byte
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		received = b
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	r := runner.New(runner.Config{BaseURL: server.URL, Timeout: 5 * time.Second})
+	fragment := json.RawMessage(`{"x":`) // invalid JSON; must not go through json.Marshal(body)
+
+	_, err := r.Run(context.Background(), model.CaseInput{
+		Method: "POST",
+		Path:   "/orders",
+		Body:   fragment,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if string(received) != `{"x":` {
+		t.Fatalf("server received %q, want raw fragment", received)
 	}
 }

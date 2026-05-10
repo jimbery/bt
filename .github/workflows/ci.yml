@@ -57,6 +57,9 @@ jobs:
       - name: Integration tests (JSON output)
         run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --output json
 
+      - name: Integration tests (fuzz strategy, safe profile)
+        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy fuzz --safety safe --fuzz-iterations 20
+
       - name: Integration tests (JUnit to artifact)
         run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --output junit > examples/orders-api/bt/.bt/reports/results.xml
 

@@ -25,6 +25,18 @@ paths:
                   status:
                     type: string
                     enum: [ok]
+        # Fuzz and hostile paths may hit these; declaring them avoids false
+        # unexpected_status when the server behaves reasonably off the happy path.
+        "400":
+          description: Malformed request or invalid path
+        "404":
+          description: No resource for this path
+        "405":
+          description: Method not allowed for this path
+        "414":
+          description: URI too long
+        "431":
+          description: Request header fields too large
 
   /orders:
     get:

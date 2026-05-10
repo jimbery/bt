@@ -24,6 +24,13 @@ strategies:
     config:
       checks: 30
 
+  # Fuzz (M5): mutation-based probes; safe profile blocks DELETE/PUT by default.
+  - type: fuzz
+    operations:
+      - GetHealth
+    config:
+      fuzz_iterations: 20
+
 report:
   formats: [console, json, junit]
   output_dir: examples/orders-api/bt/.bt/reports

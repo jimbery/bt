@@ -19,6 +19,7 @@ type JUnitTestSuite struct {
 	Name     string          `xml:"name,attr"`
 	Tests    int             `xml:"tests,attr"`
 	Failures int             `xml:"failures,attr"`
+	Skipped  int             `xml:"skipped,attr,omitempty"`
 	Cases    []JUnitTestCase `xml:"testcase"`
 }
 
@@ -27,6 +28,12 @@ type JUnitTestCase struct {
 	Name      string        `xml:"name,attr"`
 	Classname string        `xml:"classname,attr"`
 	Failure   *JUnitFailure `xml:"failure,omitempty"`
+	Skipped   *JUnitSkipped `xml:"skipped,omitempty"`
+}
+
+// JUnitSkipped marks a skipped test case.
+type JUnitSkipped struct {
+	Message string `xml:"message,attr,omitempty"`
 }
 
 // JUnitFailure represents a test failure.
@@ -53,10 +60,17 @@ func (r *junitReporter) Write(results []model.Result) error {
 			Name:      res.CaseID,
 			Classname: "bt",
 		}
-		if !res.Passed && len(res.Failures) > 0 {
+		if res.Skipped {
+			suite.Skipped++
+			tc.Skipped = &JUnitSkipped{Message: res.SkipReason}
+		} else if !res.Passed && len(res.Failures) > 0 {
 			msgs := ""
 			for _, f := range res.Failures {
-				msgs += fmt.Sprintf("%s: %s\n", f.Invariant, f.Message)
+				label := f.Invariant
+				if f.Classification != "" {
+					label = f.Classification
+				}
+				msgs += fmt.Sprintf("%s: %s\n", label, f.Message)
 			}
 			tc.Failure = &JUnitFailure{
 				Message: res.Failures[0].Message,
