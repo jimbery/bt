@@ -1,4 +1,4 @@
-.PHONY: test lint bt orders-api run-orders-api run-bt-orders run-integration-local
+.PHONY: test lint precommit bt orders-api run-orders-api run-bt-orders run-bt-orders-property run-integration-local
 
 test:
 	go test ./... -race
@@ -7,6 +7,9 @@ test:
 lint:
 	golangci-lint fmt
 	golangci-lint run
+
+# Lint + race tests (used by .githooks/pre-commit).
+precommit: lint test
 
 bt:
 	go build -o bt ./cmd/bt
@@ -22,6 +25,10 @@ run-orders-api:
 run-bt-orders: bt
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
 
+# Terminal 2 (with API already listening on localhost:8080): property checks on GetHealth + ListOrders.
+run-bt-orders-property: bt
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property
+
 # One-shot: build, start orders-api in the background, run bt, then stop the API.
 run-integration-local: bt orders-api
 	set -e; \
@@ -32,4 +39,5 @@ run-integration-local: bt orders-api
 		sleep 0.2; \
 	done; \
 	curl -sf http://localhost:$${PORT:-8080}/health >/dev/null; \
-	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table; \
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property

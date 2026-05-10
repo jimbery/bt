@@ -15,3 +15,4 @@ checksums.txt
 .DS_Store
 .idea/
 .vscode/
+internal/strategy/property/testdata/

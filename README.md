@@ -136,8 +136,10 @@ make run-orders-api
 
 ```bash
 make run-bt-orders
+# or property: make run-bt-orders-property
 # equivalent:
 # ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
+# ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property
 ```
 
 **One-shot integration** (builds, starts API in the background, runs passing table tests, tears down):
@@ -173,10 +175,24 @@ Before you commit, run the same checks as CI (formatters plus linters):
 make lint
 ```
 
-That runs `golangci-lint fmt` (gofmt + goimports) and `golangci-lint run`. Install [golangci-lint](https://golangci-lint.run/welcome/install/) v2 locally, or rely on CI after pushing.
+Or run **lint and race tests** together (same as the git hook):
 
 ```bash
-go test ./... -race
+make precommit
+```
+
+That runs `golangci-lint fmt` (gofmt + goimports) and `golangci-lint run`. **`make precommit`** adds **`go test ./... -race`**. Install [golangci-lint](https://golangci-lint.run/welcome/install/) v2 locally, or rely on CI after pushing.
+
+**Optional — run `make precommit` on every commit** (lint + race tests, same as CI `make test` plus `make lint`):
+
+```bash
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-commit   # once per clone
+```
+
+The hook runs **`make precommit`**; fix failures before `git commit` succeeds.
+
+```bash
 make bt
 ```
 

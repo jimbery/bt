@@ -19,6 +19,7 @@ type Result struct {
 type Failure struct {
 	Invariant string `json:"invariant"`
 	Message   string `json:"message"`
+	Path      string `json:"path,omitempty"`
 	Expected  any    `json:"expected,omitempty"`
 	Actual    any    `json:"actual,omitempty"`
 }

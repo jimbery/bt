@@ -12,7 +12,9 @@ import (
 	"github.com/jayimbery/bt/internal/report"
 	"github.com/jayimbery/bt/internal/runner"
 	"github.com/jayimbery/bt/internal/strategy"
+	"github.com/jayimbery/bt/internal/strategy/property"
 	"github.com/jayimbery/bt/internal/strategy/table"
+	"github.com/jayimbery/bt/pkg/model"
 )
 
 func newRunCmd() *cobra.Command {
@@ -57,6 +59,28 @@ func newRunCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if strategy.Kind(strategyName) == strategy.KindProperty {
+				if cmd.Flags().Changed("seed") {
+					seed, err := cmd.Flags().GetInt64("seed")
+					if err != nil {
+						return err
+					}
+					if spec.Config == nil {
+						spec.Config = map[string]any{}
+					}
+					spec.Config["seed"] = seed
+				}
+				if cmd.Flags().Changed("checks") {
+					checks, err := cmd.Flags().GetInt("checks")
+					if err != nil {
+						return err
+					}
+					if spec.Config == nil {
+						spec.Config = map[string]any{}
+					}
+					spec.Config["checks"] = checks
+				}
+			}
 
 			cases, err := st.Plan(cmd.Context(), spec, ops)
 			if err != nil {
@@ -97,6 +121,8 @@ func newRunCmd() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().Int64("seed", 0, "PRNG seed for property strategy (rapid); omit for random seed")
+	cmd.Flags().Int("checks", 0, "number of property checks per operation (rapid); 0 uses default from strategy")
 	return cmd
 }
 
@@ -106,6 +132,12 @@ func buildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config) (str
 	case strategy.KindTable:
 		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
 		st = table.NewWithOptions(table.Options{
+			ArtifactWriter: replay.NewWriter(artifactDir),
+			Environment:    cfg.Target.Environment,
+		})
+	case strategy.KindProperty:
+		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
+		st = property.NewWithOptions(property.Options{
 			ArtifactWriter: replay.NewWriter(artifactDir),
 			Environment:    cfg.Target.Environment,
 		})
@@ -120,6 +152,10 @@ func buildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config) (str
 			continue
 		}
 		found = true
+		spec.Operations = append([]string(nil), sc.Operations...)
+		for _, name := range sc.Invariants {
+			spec.Invariants = append(spec.Invariants, model.Invariant{Name: name})
+		}
 		if sc.Config != nil {
 			spec.Config = make(map[string]any, len(sc.Config)+1)
 			for k, v := range sc.Config {

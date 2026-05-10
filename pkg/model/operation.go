@@ -27,6 +27,12 @@ type SchemaRef struct {
 	Enum       []any                 `json:"enum,omitempty"`
 	OneOf      []*SchemaRef          `json:"oneOf,omitempty"`
 	AnyOf      []*SchemaRef          `json:"anyOf,omitempty"`
+	MinLength  *int                  `json:"minLength,omitempty"`
+	MaxLength  *int                  `json:"maxLength,omitempty"`
+	Minimum    *float64              `json:"minimum,omitempty"`
+	Maximum    *float64              `json:"maximum,omitempty"`
+	MinItems   *int                  `json:"minItems,omitempty"`
+	MaxItems   *int                  `json:"maxItems,omitempty"`
 }
 
 type ResponseSpec struct {
