@@ -30,4 +30,10 @@ type CaseExpectation struct {
 	StatusCode int               `json:"status_code,omitempty"`
 	Schema     *SchemaRef        `json:"schema,omitempty"`
 	Headers    map[string]string `json:"headers,omitempty"`
+
+	// GraphQL table expectations (YAML gql_*). Used only by the table strategy.
+	GQLData       map[string]any `json:"gql_data,omitempty"`
+	GQLNoErrors   *bool          `json:"gql_no_errors,omitempty"`
+	GQLHasErrors  *bool          `json:"gql_has_errors,omitempty"`
+	GQLDataSchema *SchemaRef     `json:"gql_data_schema,omitempty"`
 }

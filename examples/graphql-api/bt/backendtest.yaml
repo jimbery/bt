@@ -1,0 +1,18 @@
+version: 1
+
+target:
+  name: graphql-orders-api
+  base_url: http://localhost:8090
+  schema: examples/graphql-api/schema.graphql
+  adapter: graphql
+
+strategies:
+  - type: table
+    file: examples/graphql-api/bt/tests/table.yaml
+
+report:
+  formats: [console, json, junit]
+  output_dir: examples/graphql-api/bt/.bt/reports
+
+safety:
+  profile: safe

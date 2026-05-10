@@ -3,6 +3,7 @@ module github.com/jayimbery/bt
 go 1.25.5
 
 require (
+	github.com/graphql-go/graphql v0.8.1
 	github.com/mark3labs/mcp-go v0.40.0
 	github.com/pb33f/libopenapi v0.36.3
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2

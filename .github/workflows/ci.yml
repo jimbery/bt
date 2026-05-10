@@ -28,6 +28,56 @@ jobs:
       - name: Build bt
         run: go build -o bt ./cmd/bt
 
+      - name: Build graphql-api
+        run: go build -o graphql-api ./examples/graphql-api
+
+      - name: Start graphql-api
+        run: ./graphql-api &
+        env:
+          PORT: "8090"
+
+      - name: Wait for graphql-api
+        run: |
+          for i in $(seq 1 10); do
+            if curl -sf http://localhost:8090/health; then
+              exit 0
+            fi
+            echo "waiting for graphql-api... ($i)"
+            sleep 1
+          done
+          echo "graphql-api did not become ready"
+          exit 1
+
+      - name: Ensure graphql-api bt report directory
+        run: mkdir -p examples/graphql-api/bt/.bt/reports
+
+      - name: GraphQL — bt table
+        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table
+
+      - name: GraphQL — bt JSON
+        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --output json
+
+      - name: GraphQL — bt JUnit
+        if: always()
+        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --output junit
+
+      - name: GraphQL — Go integration tests
+        run: go test -tags=integration ./examples/graphql-api/integration/... -race -count=1
+
+      - name: GraphQL — amount bug detection
+        run: |
+          BT_GQL_AMOUNT_BUG=1 ./graphql-api --port 8091 &
+          sleep 1
+          GRAPHQL_BT_CONFIG=examples/graphql-api/bt/backendtest-bug.yaml BT_GQL_AMOUNT_BUG=1 go test ./examples/graphql-api/integration/... -tags=integration -run TestGraphQLRun_AmountBugDetected -count=1 -v
+
+      - name: Upload GraphQL bt reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: graphql-test-results
+          path: examples/graphql-api/bt/.bt/reports/
+          retention-days: 7
+
       - name: MCP stdio test client
         run: go test ./internal/mcp/testclient/... -race -count=1
 

@@ -1,0 +1,33 @@
+type Query {
+  order(id: ID!): Order
+  orders(status: OrderStatus): [Order!]!
+  health: String!
+}
+
+type Mutation {
+  createOrder(input: CreateOrderInput!): Order!
+  updateOrderStatus(id: ID!, status: OrderStatus!): Order!
+}
+
+type Order {
+  id: ID!
+  amount: Int!
+  currency: String!
+  description: String
+  status: OrderStatus!
+  createdAt: String!
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+input CreateOrderInput {
+  amount: Int!
+  currency: String!
+  description: String
+}
