@@ -28,6 +28,12 @@ jobs:
       - name: Build bt
         run: go build -o bt ./cmd/bt
 
+      - name: MCP stdio test client
+        run: go test ./internal/mcp/testclient/... -race -count=1
+
+      - name: MCP call CLI (subprocess)
+        run: go test ./internal/cli/... -run 'TestMCPCallCommand_(UnknownTool|ValidTool)' -count=1
+
       - name: Build orders-api
         run: go build -o orders-api ./examples/orders-api
 
@@ -181,7 +187,69 @@ jobs:
           fi
           echo "OK: fuzz report and classifications look sane"
 
-      - name: Go integration tests (property + fuzz)
+      # M6.5 — MCP server smoke tests (stdio + bt mcp call)
+      - name: MCP smoke — bt_validate via CLI JSON
+        run: |
+          ./bt validate \
+            --config examples/orders-api/bt/backendtest.yaml \
+            --output json \
+          | jq -e '.valid == true' > /dev/null
+          echo "OK: bt_validate reports config is valid"
+
+      - name: MCP smoke — bt_discover_operations response schema
+        run: |
+          RESULT=$(./bt mcp call bt_discover_operations \
+            --input '{"schema_path":"examples/orders-api/spec/openapi.yaml"}' \
+            --output json)
+          echo "$RESULT" | jq -e '.operation_count > 0' > /dev/null
+          echo "$RESULT" | jq -e '.operations | length > 0' > /dev/null
+          echo "$RESULT" | jq -e '.operations[0] | has("id") and has("method") and has("path")' > /dev/null
+          echo "OK: bt_discover_operations returned valid operation list"
+
+      - name: MCP smoke — bt_run response schema
+        run: |
+          RESULT=$(./bt mcp call bt_run \
+            --input '{"config_path":"examples/orders-api/bt/backendtest.yaml","strategy":"table"}' \
+            --output json)
+          echo "$RESULT" | jq -e 'has("passed") and has("failed") and has("total") and has("strategy") and has("artifact_dir")' > /dev/null
+          echo "$RESULT" | jq -e '.passed + .failed + .skipped == .total' > /dev/null
+          echo "OK: bt_run response is well-formed"
+
+      - name: MCP smoke — bt_run then bt_explain_failure chain
+        run: |
+          RUN_RESULT=$(./bt mcp call bt_run \
+            --input '{"config_path":"examples/orders-api/bt/backendtest-failures.yaml","strategy":"table"}' \
+            --output json) || true
+
+          FAILURE_COUNT=$(echo "$RUN_RESULT" | jq '.failures | length')
+          if [ "$FAILURE_COUNT" -eq 0 ]; then
+            echo "No failures produced — skipping explain chain"
+            exit 0
+          fi
+
+          ARTIFACT=$(echo "$RUN_RESULT" | jq -r '.failures[0].artifact_path')
+          echo "Explaining artifact: $ARTIFACT"
+
+          EXPLAIN_RESULT=$(./bt mcp call bt_explain_failure \
+            --input "$(jq -cn --arg p "$ARTIFACT" '{artifact_path:$p}')" \
+            --output json)
+          echo "$EXPLAIN_RESULT" | jq -e 'has("case_id") and has("request") and has("response") and has("replay_command")' > /dev/null
+          echo "$EXPLAIN_RESULT" | jq -e '.replay_command | contains("bt replay")' > /dev/null
+          echo "OK: bt_explain_failure returned full failure detail"
+
+      - name: MCP smoke — bt_scaffold_config produces valid config
+        run: |
+          SCAFFOLD=$(./bt mcp call bt_scaffold_config \
+            --input '{"schema_path":"examples/orders-api/spec/openapi.yaml","base_url":"http://localhost:8080"}' \
+            --output json)
+          echo "$SCAFFOLD" | jq -e '.config_yaml | length > 0' > /dev/null
+          echo "$SCAFFOLD" | jq -r '.config_yaml' > /tmp/scaffolded-mcp.yaml
+
+          VALIDATE=$(./bt validate --config /tmp/scaffolded-mcp.yaml --output json)
+          echo "$VALIDATE" | jq -e '.valid == true' > /dev/null
+          echo "OK: scaffolded config passes validation"
+
+      - name: Go integration tests (property + fuzz + MCP)
         run: go test -tags=integration ./examples/orders-api/integration/... -count=1
 
       - name: Upload property run report
