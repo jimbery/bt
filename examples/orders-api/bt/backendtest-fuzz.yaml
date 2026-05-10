@@ -1,0 +1,25 @@
+version: 1
+
+target:
+  name: orders-api
+  base_url: http://localhost:8080
+  schema: examples/orders-api/spec/openapi.yaml
+
+strategies:
+  - type: fuzz
+    operations:
+      - CreateOrder
+      - GetOrderBroken
+      - ListOrders
+    config:
+      fuzz_iterations: 100
+      corpus_dir: corpus
+
+report:
+  formats: [console, json]
+  output_dir: examples/orders-api/bt/.bt/reports
+
+safety:
+  profile: safe
+  max_requests_per_second: 20
+  timeout_seconds: 10

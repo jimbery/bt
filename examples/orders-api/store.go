@@ -84,3 +84,13 @@ func (s *store) update(id, status string) (*order, bool) {
 	o.Status = status
 	return o, true
 }
+
+func (s *store) delete(id string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.orders[id]; !ok {
+		return false
+	}
+	delete(s.orders, id)
+	return true
+}

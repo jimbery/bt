@@ -274,7 +274,13 @@ func (pathMutator) Mutate(seed Input, r *rand.Rand) Input {
 	case 1:
 		segs[si] = strings.Repeat("P", 2048)
 	case 2:
-		segs[si] = "../.."
+		// Avoid "../.." on a single path segment — it normalizes to "/" and leaves
+		// the operation's declared surface (spurious unexpected_status / noise).
+		if len(segs) == 1 {
+			segs[si] = segs[si] + "_seg"
+		} else {
+			segs[si] = "../.."
+		}
 	case 3:
 		segs[si] = special[r.Intn(len(special))]
 	case 4:

@@ -15,6 +15,7 @@ var validStatuses = map[string]bool{
 }
 
 var brokenCallCount atomic.Uint64
+var deleteAttempts atomic.Uint64
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
@@ -125,6 +126,27 @@ func handleBrokenOrder(s *store) http.HandlerFunc {
 			"id": o.ID,
 		})
 	}
+}
+
+func handleDeleteOrder(s *store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		deleteAttempts.Add(1)
+		if r.Header.Get("X-Confirm-Delete") != "yes" {
+			writeError(w, http.StatusBadRequest, "MISSING_CONFIRM", "confirmation header required")
+			return
+		}
+		id := r.PathValue("id")
+		if !s.delete(id) {
+			writeError(w, http.StatusNotFound, "NOT_FOUND", "not found")
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func handleAdminDeleteCount(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]any{"delete_attempts": deleteAttempts.Load()})
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

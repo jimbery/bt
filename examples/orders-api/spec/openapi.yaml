@@ -25,18 +25,6 @@ paths:
                   status:
                     type: string
                     enum: [ok]
-        # Fuzz and hostile paths may hit these; declaring them avoids false
-        # unexpected_status when the server behaves reasonably off the happy path.
-        "400":
-          description: Malformed request or invalid path
-        "404":
-          description: No resource for this path
-        "405":
-          description: Method not allowed for this path
-        "414":
-          description: URI too long
-        "431":
-          description: Request header fields too large
 
   /orders:
     get:
@@ -175,6 +163,52 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+    delete:
+      operationId: DeleteOrder
+      summary: Delete an order (requires confirmation header)
+      tags: [orders]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Confirm-Delete
+          in: header
+          required: false
+          schema:
+            type: string
+            enum: ["yes"]
+      responses:
+        "204":
+          description: Order deleted successfully
+        "400":
+          description: Confirmation header missing
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, code]
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: string
+                    enum: [MISSING_CONFIRM]
+        "404":
+          description: Order not found
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, code]
+                properties:
+                  error:
+                    type: string
+                  code:
+                    type: string
+                    enum: [NOT_FOUND]
+
   /orders/{id}/broken:
     get:
       operationId: GetOrderBroken
@@ -199,6 +233,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+
+  /admin/delete-count:
+    get:
+      operationId: GetDeleteCount
+      summary: Returns the number of DELETE attempts received (for safety verification)
+      tags: [admin]
+      responses:
+        "200":
+          description: Delete attempt count
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [delete_attempts]
+                properties:
+                  delete_attempts:
+                    type: integer
+                    minimum: 0
 
 components:
   schemas:

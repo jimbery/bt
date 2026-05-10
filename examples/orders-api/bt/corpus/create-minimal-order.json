@@ -1,0 +1,1 @@
+{"method":"POST","path":"/orders","query":{},"headers":{"Content-Type":"application/json"},"body":{"amount":1,"currency":"USD"}}

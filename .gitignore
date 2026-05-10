@@ -5,6 +5,7 @@ dist/
 
 # Runtime artifacts
 .bt/
+/corpus/
 testdata/rapid/
 
 # GoReleaser
