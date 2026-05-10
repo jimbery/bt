@@ -13,6 +13,6 @@ type Artifact struct {
 	Response     ResponseDetail `json:"response"`
 	Failures     []Failure      `json:"failures,omitempty"`
 	// Expected is set for table-strategy artifacts when the case had expectations (used by replay for response_matches_schema).
-	Expected     *CaseExpectation `json:"expected,omitempty"`
-	ShrinkTrace []string `json:"shrink_trace,omitempty"`
+	Expected    *CaseExpectation `json:"expected,omitempty"`
+	ShrinkTrace []string         `json:"shrink_trace,omitempty"`
 }
