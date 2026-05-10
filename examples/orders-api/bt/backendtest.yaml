@@ -1,5 +1,6 @@
 # Paths are relative to the process working directory (repo root when running:
 #   ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
+#   ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property [--seed 42] [--checks 50]
 # from the repository root, matching CI.)
 version: 1
 
@@ -11,6 +12,17 @@ target:
 strategies:
   - type: table
     file: examples/orders-api/bt/tests/table.yaml
+
+  # Property checks (Rapid): start the API on target.base_url first.
+  # GetHealth + ListOrders are read-only GETs with stable 200 + JSON schemas.
+  - type: property
+    operations:
+      - GetHealth
+      - ListOrders
+    invariants:
+      - no_5xx
+    config:
+      checks: 30
 
 report:
   formats: [console, json, junit]

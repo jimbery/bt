@@ -136,8 +136,10 @@ make run-orders-api
 
 ```bash
 make run-bt-orders
+# or property: make run-bt-orders-property
 # equivalent:
 # ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
+# ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property
 ```
 
 **One-shot integration** (builds, starts API in the background, runs passing table tests, tears down):
