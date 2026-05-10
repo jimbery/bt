@@ -47,8 +47,12 @@ type ReportConfig struct {
 }
 
 type SafetyConfig struct {
-	Profile     string   `mapstructure:"profile"`
-	DenyMethods []string `mapstructure:"deny_methods"`
+	Profile              string   `mapstructure:"profile"`
+	DenyMethods          []string `mapstructure:"deny_methods"`
+	AllowedMethods       []string `mapstructure:"allowed_methods"`
+	MaxRequestsPerSecond float64  `mapstructure:"max_requests_per_second"`
+	MaxConcurrency       int      `mapstructure:"max_concurrency"`
+	TimeoutSeconds       float64  `mapstructure:"timeout_seconds"`
 }
 
 func Load(path string) (*Config, error) {

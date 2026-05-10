@@ -17,9 +17,10 @@ func (r *jsonReporter) Write(results []model.Result) error {
 	out := map[string]any{
 		"results": results,
 		"summary": map[string]any{
-			"total":  s.Total,
-			"passed": s.Passed,
-			"failed": s.Failed,
+			"total":   s.Total,
+			"passed":  s.Passed,
+			"failed":  s.Failed,
+			"skipped": s.Skipped,
 		},
 	}
 	enc := json.NewEncoder(r.w)
