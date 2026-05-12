@@ -124,13 +124,12 @@ func operationFromField(schema *ast.Schema, field *ast.FieldDefinition, gk model
 	if err != nil {
 		return model.Operation{}, err
 	}
-	doc, err := minimalOperationDocument(schema, gk, field)
+	doc, varTypes, err := minimalOperationDocument(schema, gk, field)
 	if err != nil {
 		return model.Operation{}, err
 	}
-	varTypes, err := variableTypesFromArgs(schema, field.Arguments)
-	if err != nil {
-		return model.Operation{}, err
+	if len(varTypes) == 0 {
+		varTypes = nil
 	}
 	env, err := responseEnvelopeSchema(field.Name, selSchema)
 	if err != nil {

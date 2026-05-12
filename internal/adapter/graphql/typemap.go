@@ -117,27 +117,12 @@ func scalarToSchemaRef(name string) *model.SchemaRef {
 		return &model.SchemaRef{Type: "number"}
 	case "Boolean":
 		return &model.SchemaRef{Type: "boolean"}
+	case "JSON", "Json":
+		// Arbitrary JSON: omit Type so response validation treats values as unconstrained (see validate.validateValue default).
+		return &model.SchemaRef{}
 	default:
 		return &model.SchemaRef{Type: "string"}
 	}
-}
-
-func variableTypesFromArgs(s *ast.Schema, args ast.ArgumentDefinitionList) (map[string]*model.SchemaRef, error) {
-	if len(args) == 0 {
-		return nil, nil
-	}
-	out := make(map[string]*model.SchemaRef, len(args))
-	for _, a := range args {
-		if a == nil {
-			continue
-		}
-		sr, err := buildSchemaRefForGraphQLType(s, a.Type, make(map[string]struct{}))
-		if err != nil {
-			return nil, err
-		}
-		out[a.Name] = sr
-	}
-	return out, nil
 }
 
 func responseEnvelopeSchema(fieldName string, sel *model.SchemaRef) (*model.SchemaRef, error) {

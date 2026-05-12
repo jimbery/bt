@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	gqladapter "github.com/jayimbery/bt/internal/adapter/graphql"
@@ -514,4 +515,39 @@ func TestGraphQLAdapter_Discover_SDL_ListReturnType_MapsToArray(t *testing.T) {
 		}
 	}
 	t.Error("operation 'products' not found")
+}
+
+func TestGraphQLAdapter_Discover_SDL_MinimalDocumentIncludesNestedFieldArguments(t *testing.T) {
+	t.Parallel()
+	sdl := `
+type Query {
+  box: Box!
+}
+
+type Box {
+  inner(input: String!): String!
+}
+`
+	path := writeSDL(t, sdl)
+	a := gqladapter.New()
+	ops, err := a.Discover(context.Background(), model.Target{SchemaPath: path})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, op := range ops {
+		if op.ID != "box" {
+			continue
+		}
+		if !strings.Contains(op.GQLDocument, "inner(input: $inner_input)") {
+			t.Errorf("expected nested field call with variable, got:\n%s", op.GQLDocument)
+		}
+		if !strings.Contains(op.GQLDocument, "$inner_input: String!") {
+			t.Errorf("expected nested variable declaration, got:\n%s", op.GQLDocument)
+		}
+		if op.GQLVariableTypes == nil || op.GQLVariableTypes["inner_input"] == nil {
+			t.Fatalf("expected GQLVariableTypes['inner_input'], got %#v", op.GQLVariableTypes)
+		}
+		return
+	}
+	t.Error("operation 'box' not found")
 }
