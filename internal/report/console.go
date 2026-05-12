@@ -71,14 +71,23 @@ func (r *consoleReporter) Write(results []model.Result) error {
 		if !res.Passed {
 			status = "FAIL"
 		}
-		_, _ = fmt.Fprintf(r.w, "  %s  %s  (HTTP %d, %s)\n",
-			status, res.CaseID, res.StatusCode, res.Duration)
+		nSchema := len(res.SchemaViolations)
+		if nSchema > 0 {
+			_, _ = fmt.Fprintf(r.w, "  %s  %s  (HTTP %d, schema: %d violation%s, %s)\n",
+				status, res.CaseID, res.StatusCode, nSchema, pluralS(nSchema), res.Duration)
+		} else {
+			_, _ = fmt.Fprintf(r.w, "  %s  %s  (HTTP %d, %s)\n",
+				status, res.CaseID, res.StatusCode, res.Duration)
+		}
 		for _, f := range res.Failures {
 			label := f.Invariant
 			if f.Classification != "" {
 				label = f.Classification
 			}
 			_, _ = fmt.Fprintf(r.w, "       %s: %s\n", label, f.Message)
+		}
+		for _, sv := range res.SchemaViolations {
+			_, _ = fmt.Fprintf(r.w, "       %s  %s [%s]\n", sv.Field, sv.Message, sv.Severity)
 		}
 		if res.ArtifactPath != "" {
 			_, _ = fmt.Fprintf(r.w, "       artifact: %s\n", res.ArtifactPath)
@@ -98,6 +107,9 @@ func (r *consoleReporter) Write(results []model.Result) error {
 		}
 	}
 	line := fmt.Sprintf("\n%d %s run: %d passed, %d failed", s.Total, label, s.Passed, s.Failed)
+	if s.SchemaViolations > 0 {
+		line += fmt.Sprintf(" (%d schema violation%s)", s.SchemaViolations, pluralS(s.SchemaViolations))
+	}
 	if s.Quarantined > 0 {
 		line += fmt.Sprintf(", %d quarantined", s.Quarantined)
 	}
@@ -106,6 +118,13 @@ func (r *consoleReporter) Write(results []model.Result) error {
 	}
 	_, _ = fmt.Fprintf(r.w, "%s\n", line)
 	return nil
+}
+
+func pluralS(n int) string {
+	if n == 1 {
+		return ""
+	}
+	return "s"
 }
 
 func writeFailureResponseBody(w io.Writer, body []byte) {

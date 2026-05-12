@@ -51,7 +51,7 @@ func (r *junitReporter) Write(results []model.Result) error {
 	s := summarise(results)
 	failures := 0
 	for _, res := range results {
-		if !res.Skipped && !res.Passed && !res.Quarantined && len(res.Failures) > 0 {
+		if !res.Skipped && !res.Passed && !res.Quarantined && (len(res.Failures) > 0 || len(res.SchemaViolations) > 0) {
 			failures++
 		}
 	}
@@ -69,7 +69,7 @@ func (r *junitReporter) Write(results []model.Result) error {
 		if res.Skipped {
 			suite.Skipped++
 			tc.Skipped = &JUnitSkipped{Message: res.SkipReason}
-		} else if !res.Passed && !res.Quarantined && len(res.Failures) > 0 {
+		} else if !res.Passed && !res.Quarantined && (len(res.Failures) > 0 || len(res.SchemaViolations) > 0) {
 			msgs := ""
 			for _, f := range res.Failures {
 				label := f.Invariant
@@ -78,11 +78,20 @@ func (r *junitReporter) Write(results []model.Result) error {
 				}
 				msgs += fmt.Sprintf("%s: %s\n", label, f.Message)
 			}
+			for _, sv := range res.SchemaViolations {
+				msgs += fmt.Sprintf("schema: %s: %s [%s]\n", sv.Field, sv.Message, sv.Severity)
+			}
 			if len(res.Response.Body) > 0 {
 				msgs += "\n--- response body ---\n" + FailureBodyForDisplay(res.Response.Body) + "\n"
 			}
+			msg := ""
+			if len(res.Failures) > 0 {
+				msg = res.Failures[0].Message
+			} else if len(res.SchemaViolations) > 0 {
+				msg = res.SchemaViolations[0].Message
+			}
 			tc.Failure = &JUnitFailure{
-				Message: res.Failures[0].Message,
+				Message: msg,
 				Text:    msgs,
 			}
 		}

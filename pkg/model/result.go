@@ -30,6 +30,9 @@ type Result struct {
 	Request           RequestDetail  `json:"request"`
 	Response          ResponseDetail `json:"response"`
 	ArtifactPath      string         `json:"artifact_path,omitempty"`
+	// SchemaViolations lists response body schema disagreements (table strategy, etc.).
+	// Encoding always uses a JSON array, never null.
+	SchemaViolations []SchemaViolation `json:"schema_violations,omitempty"`
 }
 
 type Failure struct {
@@ -90,27 +93,32 @@ type ResponseDetail struct {
 
 func (r Result) MarshalJSON() ([]byte, error) {
 	type out struct {
-		CaseID            string         `json:"case_id"`
-		OperationID       string         `json:"operation_id,omitempty"`
-		Passed            bool           `json:"passed"`
-		Skipped           bool           `json:"skipped,omitempty"`
-		SkipReason        string         `json:"skip_reason,omitempty"`
-		StrategyKind      string         `json:"strategy_kind,omitempty"`
-		ContractSchemaRef string         `json:"contract_schema_ref,omitempty"`
-		Quarantined       bool           `json:"quarantined,omitempty"`
-		QuarantineReason  string         `json:"quarantine_reason,omitempty"`
-		QuarantineExpired bool           `json:"quarantine_expired,omitempty"`
-		StaleBaseline     bool           `json:"stale_baseline,omitempty"`
-		MutationCount     int            `json:"mutation_count,omitempty"`
-		Seed              int64          `json:"seed,omitempty"`
-		CasesRun          int            `json:"cases_run,omitempty"`
-		ShrinkCount       int            `json:"shrink_count,omitempty"`
-		StatusCode        int            `json:"status_code"`
-		DurationMS        int64          `json:"duration_ms"`
-		Failures          []Failure      `json:"failures,omitempty"`
-		Request           RequestDetail  `json:"request"`
-		Response          ResponseDetail `json:"response"`
-		ArtifactPath      string         `json:"artifact_path,omitempty"`
+		CaseID            string            `json:"case_id"`
+		OperationID       string            `json:"operation_id,omitempty"`
+		Passed            bool              `json:"passed"`
+		Skipped           bool              `json:"skipped,omitempty"`
+		SkipReason        string            `json:"skip_reason,omitempty"`
+		StrategyKind      string            `json:"strategy_kind,omitempty"`
+		ContractSchemaRef string            `json:"contract_schema_ref,omitempty"`
+		Quarantined       bool              `json:"quarantined,omitempty"`
+		QuarantineReason  string            `json:"quarantine_reason,omitempty"`
+		QuarantineExpired bool              `json:"quarantine_expired,omitempty"`
+		StaleBaseline     bool              `json:"stale_baseline,omitempty"`
+		MutationCount     int               `json:"mutation_count,omitempty"`
+		Seed              int64             `json:"seed,omitempty"`
+		CasesRun          int               `json:"cases_run,omitempty"`
+		ShrinkCount       int               `json:"shrink_count,omitempty"`
+		StatusCode        int               `json:"status_code"`
+		DurationMS        int64             `json:"duration_ms"`
+		Failures          []Failure         `json:"failures,omitempty"`
+		Request           RequestDetail     `json:"request"`
+		Response          ResponseDetail    `json:"response"`
+		ArtifactPath      string            `json:"artifact_path,omitempty"`
+		SchemaViolations  []SchemaViolation `json:"schema_violations"`
+	}
+	sv := r.SchemaViolations
+	if sv == nil {
+		sv = []SchemaViolation{}
 	}
 	return json.Marshal(out{
 		CaseID:            r.CaseID,
@@ -134,32 +142,34 @@ func (r Result) MarshalJSON() ([]byte, error) {
 		Request:           r.Request,
 		Response:          r.Response,
 		ArtifactPath:      r.ArtifactPath,
+		SchemaViolations:  sv,
 	})
 }
 
 func (r *Result) UnmarshalJSON(data []byte) error {
 	type in struct {
-		CaseID            string         `json:"case_id"`
-		OperationID       string         `json:"operation_id,omitempty"`
-		Passed            bool           `json:"passed"`
-		Skipped           bool           `json:"skipped,omitempty"`
-		SkipReason        string         `json:"skip_reason,omitempty"`
-		StrategyKind      string         `json:"strategy_kind,omitempty"`
-		ContractSchemaRef string         `json:"contract_schema_ref,omitempty"`
-		Quarantined       bool           `json:"quarantined,omitempty"`
-		QuarantineReason  string         `json:"quarantine_reason,omitempty"`
-		QuarantineExpired bool           `json:"quarantine_expired,omitempty"`
-		StaleBaseline     bool           `json:"stale_baseline,omitempty"`
-		MutationCount     int            `json:"mutation_count,omitempty"`
-		Seed              int64          `json:"seed,omitempty"`
-		CasesRun          int            `json:"cases_run,omitempty"`
-		ShrinkCount       int            `json:"shrink_count,omitempty"`
-		StatusCode        int            `json:"status_code"`
-		DurationMS        int64          `json:"duration_ms"`
-		Failures          []Failure      `json:"failures,omitempty"`
-		Request           RequestDetail  `json:"request"`
-		Response          ResponseDetail `json:"response"`
-		ArtifactPath      string         `json:"artifact_path,omitempty"`
+		CaseID            string            `json:"case_id"`
+		OperationID       string            `json:"operation_id,omitempty"`
+		Passed            bool              `json:"passed"`
+		Skipped           bool              `json:"skipped,omitempty"`
+		SkipReason        string            `json:"skip_reason,omitempty"`
+		StrategyKind      string            `json:"strategy_kind,omitempty"`
+		ContractSchemaRef string            `json:"contract_schema_ref,omitempty"`
+		Quarantined       bool              `json:"quarantined,omitempty"`
+		QuarantineReason  string            `json:"quarantine_reason,omitempty"`
+		QuarantineExpired bool              `json:"quarantine_expired,omitempty"`
+		StaleBaseline     bool              `json:"stale_baseline,omitempty"`
+		MutationCount     int               `json:"mutation_count,omitempty"`
+		Seed              int64             `json:"seed,omitempty"`
+		CasesRun          int               `json:"cases_run,omitempty"`
+		ShrinkCount       int               `json:"shrink_count,omitempty"`
+		StatusCode        int               `json:"status_code"`
+		DurationMS        int64             `json:"duration_ms"`
+		Failures          []Failure         `json:"failures,omitempty"`
+		Request           RequestDetail     `json:"request"`
+		Response          ResponseDetail    `json:"response"`
+		ArtifactPath      string            `json:"artifact_path,omitempty"`
+		SchemaViolations  []SchemaViolation `json:"schema_violations"`
 	}
 	var aux in
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -186,5 +196,9 @@ func (r *Result) UnmarshalJSON(data []byte) error {
 	r.Request = aux.Request
 	r.Response = aux.Response
 	r.ArtifactPath = aux.ArtifactPath
+	r.SchemaViolations = aux.SchemaViolations
+	if r.SchemaViolations == nil {
+		r.SchemaViolations = []SchemaViolation{}
+	}
 	return nil
 }

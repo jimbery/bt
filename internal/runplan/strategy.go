@@ -136,6 +136,17 @@ func BuildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, opt 
 				spec.Config["corpus_dir"] = filepath.Join(filepath.Dir(cfgPath), "corpus")
 			}
 		}
+		if strategy.Kind(strategyName) == strategy.KindTable {
+			sp := strings.TrimSpace(cfg.Target.SchemaPath)
+			if sp != "" {
+				if !filepath.IsAbs(sp) {
+					if abs, err := filepath.Abs(sp); err == nil {
+						sp = abs
+					}
+				}
+				spec.Config["target_schema_path"] = sp
+			}
+		}
 		break
 	}
 	if !found {
