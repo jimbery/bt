@@ -10,16 +10,18 @@ type Reporter interface {
 }
 
 type summary struct {
-	Total       int
-	Passed      int
-	Failed      int
-	Skipped     int
-	Quarantined int
+	Total            int
+	Passed           int
+	Failed           int
+	Skipped          int
+	Quarantined      int
+	SchemaViolations int
 }
 
 func summarise(results []model.Result) summary {
 	s := summary{Total: len(results)}
 	for _, r := range results {
+		s.SchemaViolations += len(r.SchemaViolations)
 		if r.Skipped {
 			s.Skipped++
 			continue

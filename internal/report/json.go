@@ -22,11 +22,12 @@ func (r *jsonReporter) Write(results []model.Result) error {
 	out := map[string]any{
 		"results": rows,
 		"summary": map[string]any{
-			"total":       s.Total,
-			"passed":      s.Passed,
-			"failed":      s.Failed,
-			"skipped":     s.Skipped,
-			"quarantined": s.Quarantined,
+			"total":             s.Total,
+			"passed":            s.Passed,
+			"failed":            s.Failed,
+			"skipped":           s.Skipped,
+			"quarantined":       s.Quarantined,
+			"schema_violations": s.SchemaViolations,
 		},
 	}
 	enc := json.NewEncoder(r.w)

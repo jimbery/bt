@@ -95,13 +95,25 @@ func buildSchema() (graphql.Schema, error) {
 		}),
 	})
 
+	healthStatusType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "HealthStatus",
+		Fields: graphql.Fields{
+			"status": &graphql.Field{
+				Type: graphql.NewNonNull(graphql.String),
+				Resolve: func(graphql.ResolveParams) (interface{}, error) {
+					return "ok", nil
+				},
+			},
+		},
+	})
+
 	rootQuery := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
 			"health": &graphql.Field{
-				Type: graphql.NewNonNull(graphql.String),
+				Type: graphql.NewNonNull(healthStatusType),
 				Resolve: func(graphql.ResolveParams) (interface{}, error) {
-					return "ok", nil
+					return map[string]any{"status": "ok"}, nil
 				},
 			},
 			"orders": &graphql.Field{

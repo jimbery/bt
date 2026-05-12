@@ -32,6 +32,9 @@ type Parameter struct {
 }
 
 type SchemaRef struct {
+	// Ref, when set, is an OpenAPI component reference (e.g. "#/components/schemas/Order").
+	// Inline schemas leave Ref empty.
+	Ref        string                `json:"$ref,omitempty"`
 	Type       string                `json:"type,omitempty"`
 	Format     string                `json:"format,omitempty"`
 	Properties map[string]*SchemaRef `json:"properties,omitempty"`

@@ -24,6 +24,7 @@ func RunHandler() registry.HandlerFunc {
 			ConfigPath string `json:"config_path"`
 			Strategy   string `json:"strategy"`
 			Seed       *int64 `json:"seed"`
+			Exclude    string `json:"exclude"`
 		}
 		if err := json.Unmarshal(input, &in); err != nil {
 			return nil, fmt.Errorf("decode input: %w", err)
@@ -90,6 +91,7 @@ func RunHandler() registry.HandlerFunc {
 			})
 			return out, nil
 		}
+		cases = runplan.FilterExcludedCases(cases, in.Exclude)
 		runplan.AttachResolvedOperations(cases, ops)
 
 		exec := runplan.BuildDefaultExecutor(cfg, cfg.Target.Adapter)

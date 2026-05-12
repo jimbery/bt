@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/jayimbery/bt/internal/strategy/property/validate"
 	"github.com/jayimbery/bt/pkg/model"
 )
 
-func gqlTableExpectationFailures(body []byte, exp *model.CaseExpectation) []model.Failure {
+func gqlTableExpectationFailures(body []byte, exp *model.CaseExpectation) ([]model.Failure, []model.SchemaViolation) {
 	if exp == nil {
-		return nil
+		return nil, nil
 	}
 	if exp.GQLData == nil && exp.GQLNoErrors == nil && exp.GQLHasErrors == nil && exp.GQLDataSchema == nil {
-		return nil
+		return nil, nil
 	}
 
 	var root map[string]any
@@ -23,10 +22,11 @@ func gqlTableExpectationFailures(body []byte, exp *model.CaseExpectation) []mode
 			Invariant: model.InvariantGraphQLResponse,
 			Message:   fmt.Sprintf("gql expectations: invalid JSON: %v", err),
 			Path:      "body",
-		}}
+		}}, nil
 	}
 
 	var out []model.Failure
+	var schemaOut []model.SchemaViolation
 
 	if exp.GQLNoErrors != nil && *exp.GQLNoErrors {
 		if graphqlErrorsNonEmpty(root) {
@@ -60,33 +60,12 @@ func gqlTableExpectationFailures(body []byte, exp *model.CaseExpectation) []mode
 	}
 
 	if exp.GQLDataSchema != nil {
-		raw, err := json.Marshal(data)
-		if err != nil {
-			out = append(out, model.Failure{
-				Invariant: model.InvariantGraphQLResponse,
-				Message:   fmt.Sprintf("gql_data_schema: marshal data: %v", err),
-				Path:      "data",
-			})
-		} else {
-			for _, v := range validate.ValidateResponse(raw, exp.GQLDataSchema) {
-				p := v.Path
-				if p != "" && p != "body" && p != "$" && p[0] != '[' {
-					p = "data." + p
-				} else if p == "" || p == "$" {
-					p = "data"
-				}
-				out = append(out, model.Failure{
-					Invariant: model.InvariantResponseMatchesSchema,
-					Message:   v.Message,
-					Path:      p,
-					Expected:  v.Expected,
-					Actual:    v.Got,
-				})
-			}
-		}
+		sv := EvaluateGraphQLDataSchema(exp.GQLDataSchema, body)
+		schemaOut = append(schemaOut, sv...)
+		out = append(out, schemaViolationsToFailures(sv)...)
 	}
 
-	return out
+	return out, schemaOut
 }
 
 func graphqlErrorsNonEmpty(root map[string]any) bool {

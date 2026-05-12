@@ -10,11 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/jayimbery/bt/internal/strategy"
 	gqlassert "github.com/jayimbery/bt/internal/strategy/graphql/assert"
-	"github.com/jayimbery/bt/internal/strategy/property/validate"
 	"github.com/jayimbery/bt/pkg/model"
 )
 
@@ -111,61 +108,12 @@ func (s *tableStrategy) Plan(_ context.Context, spec strategy.Spec, _ []model.Op
 		return nil, fmt.Errorf("cannot read case file: %w", err)
 	}
 
-	var cf caseFile
-	if err := yaml.Unmarshal(data, &cf); err != nil {
-		return nil, fmt.Errorf("cannot parse case file: %w", err)
+	openAPIBytes, err := readOptionalOpenAPI(spec)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read OpenAPI document for schema $ref resolution: %w", err)
 	}
 
-	cases := make([]model.Case, 0, len(cf.Cases))
-	for _, entry := range cf.Cases {
-		c := model.Case{
-			ID:          entry.ID,
-			OperationID: entry.OperationID,
-			Input: model.CaseInput{
-				Method:           entry.Input.Method,
-				Path:             entry.Input.Path,
-				Headers:          entry.Input.Headers,
-				Query:            entry.Input.Query,
-				Body:             entry.Input.Body,
-				GQLQuery:         entry.Input.GQLQuery,
-				GQLOperationName: entry.Input.GQLOperationName,
-				GQLVariables:     entry.Input.GQLVariables,
-			},
-		}
-		if entry.Expected != nil {
-			exp := &model.CaseExpectation{
-				StatusCode: entry.Expected.StatusCode,
-				Headers:    entry.Expected.Headers,
-			}
-			if entry.Expected.Schema != nil {
-				sch, err := schemaRefFromYAML(entry.Expected.Schema)
-				if err != nil {
-					return nil, fmt.Errorf("case %q: expected.schema: %w", entry.ID, err)
-				}
-				exp.Schema = sch
-			}
-			if len(entry.Expected.GQLData) > 0 {
-				exp.GQLData = entry.Expected.GQLData
-			}
-			if entry.Expected.GQLNoErrors != nil {
-				exp.GQLNoErrors = entry.Expected.GQLNoErrors
-			}
-			if entry.Expected.GQLHasErrors != nil {
-				exp.GQLHasErrors = entry.Expected.GQLHasErrors
-			}
-			if entry.Expected.GQLDataSchema != nil {
-				sch, err := schemaRefFromYAML(entry.Expected.GQLDataSchema)
-				if err != nil {
-					return nil, fmt.Errorf("case %q: expected.gql_data_schema: %w", entry.ID, err)
-				}
-				exp.GQLDataSchema = sch
-			}
-			c.Expected = exp
-		}
-		cases = append(cases, c)
-	}
-
-	return cases, nil
+	return casesFromYAMLBytes(data, openAPIBytes)
 }
 
 func schemaRefFromYAML(v any) (*model.SchemaRef, error) {
@@ -275,12 +223,13 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 				Message:   "GraphQL subscriptions are discovered but not executed by bt",
 			}}
 			results = append(results, model.Result{
-				CaseID:       c.ID,
-				Passed:       false,
-				StrategyKind: string(strategy.KindTable),
-				Request:      requestDetailFromInput(execInput),
-				Response:     model.ResponseDetail{},
-				Failures:     failures,
+				CaseID:           c.ID,
+				Passed:           false,
+				StrategyKind:     string(strategy.KindTable),
+				Request:          requestDetailFromInput(execInput),
+				Response:         model.ResponseDetail{},
+				Failures:         failures,
+				SchemaViolations: []model.SchemaViolation{},
 			})
 			continue
 		}
@@ -303,15 +252,17 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 		}
 
 		result := model.Result{
-			CaseID:       c.ID,
-			StatusCode:   resp.StatusCode,
-			Duration:     dur,
-			Response:     resp,
-			Request:      requestDetailFromInput(execInput),
-			StrategyKind: string(strategy.KindTable),
+			CaseID:           c.ID,
+			StatusCode:       resp.StatusCode,
+			Duration:         dur,
+			Response:         resp,
+			Request:          requestDetailFromInput(execInput),
+			StrategyKind:     string(strategy.KindTable),
+			SchemaViolations: []model.SchemaViolation{},
 		}
 
 		var failures []model.Failure
+		var schemaViolations []model.SchemaViolation
 
 		if c.Expected != nil {
 			if c.Expected.StatusCode != 0 && resp.StatusCode != c.Expected.StatusCode {
@@ -337,15 +288,9 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 			}
 
 			if c.Expected.Schema != nil {
-				for _, v := range validate.ValidateResponse(resp.Body, c.Expected.Schema) {
-					failures = append(failures, model.Failure{
-						Invariant: model.InvariantResponseMatchesSchema,
-						Message:   v.Message,
-						Path:      v.Path,
-						Expected:  v.Expected,
-						Actual:    v.Got,
-					})
-				}
+				sv := EvaluateSchema(c.Expected.Schema, resp.Body)
+				schemaViolations = append(schemaViolations, sv...)
+				failures = append(failures, schemaViolationsToFailures(sv)...)
 			}
 		}
 
@@ -376,9 +321,12 @@ func (s *tableStrategy) Execute(ctx context.Context, cases []model.Case, exec st
 		}
 
 		if c.Input.IsGraphQL() {
-			failures = append(failures, gqlTableExpectationFailures(resp.Body, c.Expected)...)
+			gqlFails, gqlSV := gqlTableExpectationFailures(resp.Body, c.Expected)
+			failures = append(failures, gqlFails...)
+			schemaViolations = append(schemaViolations, gqlSV...)
 		}
 
+		result.SchemaViolations = schemaViolations
 		result.Failures = failures
 		result.Passed = !tableCaseHasBlockingFailure(failures)
 
