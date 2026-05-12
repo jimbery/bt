@@ -45,12 +45,15 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [orders]
+                required: [orders, total]
                 properties:
                   orders:
                     type: array
                     items:
                       $ref: "#/components/schemas/Order"
+                  total:
+                    type: integer
+                    minimum: 0
         "400":
           description: Invalid status filter
           content:

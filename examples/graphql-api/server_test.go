@@ -37,7 +37,7 @@ func TestServer_GraphQLResponse_HasDataKey(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()
 
-	result := gqlRequest(t, srv, `{ health }`, nil)
+	result := gqlRequest(t, srv, `{ health { status } }`, nil)
 
 	if _, ok := result["data"]; !ok {
 		t.Error("expected 'data' key in GraphQL response envelope")
@@ -48,7 +48,7 @@ func TestServer_GraphQLResponse_NoErrorsOnValidQuery(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()
 
-	result := gqlRequest(t, srv, `{ health }`, nil)
+	result := gqlRequest(t, srv, `{ health { status } }`, nil)
 
 	if errs, ok := result["errors"]; ok && errs != nil {
 		t.Errorf("expected no errors on valid query, got: %v", errs)
@@ -59,14 +59,18 @@ func TestServer_HealthQuery_ReturnsOkString(t *testing.T) {
 	srv := newTestServer(t)
 	defer srv.Close()
 
-	result := gqlRequest(t, srv, `{ health }`, nil)
+	result := gqlRequest(t, srv, `{ health { status } }`, nil)
 
 	data, ok := result["data"].(map[string]any)
 	if !ok {
 		t.Fatalf("expected data to be an object, got %T", result["data"])
 	}
-	if data["health"] != "ok" {
-		t.Errorf("expected health='ok', got %v", data["health"])
+	health, ok := data["health"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected health object, got %T", data["health"])
+	}
+	if health["status"] != "ok" {
+		t.Errorf("expected health.status='ok', got %v", health["status"])
 	}
 }
 

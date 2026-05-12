@@ -34,7 +34,7 @@ func handleListOrders(s *store) http.HandlerFunc {
 		if orders == nil {
 			orders = []*order{}
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"orders": orders})
+		writeJSON(w, http.StatusOK, map[string]any{"orders": orders, "total": len(orders)})
 	}
 }
 

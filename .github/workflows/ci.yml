@@ -52,17 +52,20 @@ jobs:
         run: mkdir -p examples/graphql-api/bt/.bt/reports
 
       - name: GraphQL — bt table
-        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table
+        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --exclude gql-schema-violation-acceptance-test
 
       - name: GraphQL — bt JSON
-        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --output json
+        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --exclude gql-schema-violation-acceptance-test --output json
 
       - name: GraphQL — bt JUnit
         if: always()
-        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --output junit
+        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --exclude gql-schema-violation-acceptance-test --output junit
 
       - name: GraphQL — Go integration tests
         run: go test -tags=integration ./examples/graphql-api/integration/... -race -count=1
+
+      - name: GraphQL — schema violation acceptance (httptest)
+        run: go test -tags=integration ./examples/graphql-api -race -count=1 -run TestGQLSchemaViolationAcceptance -v
 
       - name: GraphQL — amount bug detection
         run: |
@@ -108,10 +111,10 @@ jobs:
         run: mkdir -p examples/orders-api/bt/.bt/reports
 
       - name: Integration tests (passing cases)
-        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
+        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --exclude schema-violation-acceptance-test
 
       - name: Integration tests (JSON output)
-        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --output json
+        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --exclude schema-violation-acceptance-test --output json
 
       - name: Integration tests (fuzz strategy, safe profile)
         run: |
@@ -121,7 +124,10 @@ jobs:
         # M5.5 verifies JSON report shape and DELETE safety separately.
 
       - name: Integration tests (JUnit to artifact)
-        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --output junit > examples/orders-api/bt/.bt/reports/results.xml
+        run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --exclude schema-violation-acceptance-test --output junit > examples/orders-api/bt/.bt/reports/results.xml
+
+      - name: Orders API — schema violation acceptance (httptest)
+        run: go test -tags=integration ./examples/orders-api -race -count=1 -run TestSchemaViolationAcceptance -v
 
       - name: Integration tests (expected failures — artifact production)
         run: ./bt run --config examples/orders-api/bt/backendtest-failures.yaml --strategy table || true

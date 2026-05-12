@@ -156,6 +156,11 @@ func newRunCmd() *cobra.Command {
 				if err != nil {
 					return exitcode.WrapConfig(fmt.Errorf("plan (%s): %w", stratName, err))
 				}
+				excludeCSV, err := cmd.Flags().GetString("exclude")
+				if err != nil {
+					return err
+				}
+				cases = runplan.FilterExcludedCases(cases, excludeCSV)
 				runplan.AttachResolvedOperations(cases, ops)
 
 				part, err := st.Execute(cmd.Context(), cases, exec)
@@ -237,5 +242,6 @@ func newRunCmd() *cobra.Command {
 	cmd.Flags().Int("fuzz-iterations", 0, "max HTTP attempts per operation for fuzz strategy (0 = use config or default 50)")
 	cmd.Flags().String("corpus-dir", "", "corpus directory for fuzz seeds (default: <config-dir>/corpus)")
 	cmd.Flags().Bool("load-dotenv", false, "before resolving target.auth, load unset keys from .env files (<config-dir>/.env, parent/.env, ./.env); never overrides existing environment variables")
+	cmd.Flags().String("exclude", "", "comma-separated table case IDs to skip (not included in the report)")
 	return cmd
 }

@@ -32,7 +32,7 @@ run-orders-api:
 
 # Terminal 2 (with API already listening on localhost:8080): run table integration cases.
 run-bt-orders: bt
-	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --exclude schema-violation-acceptance-test
 
 # Terminal 2 (with API already listening on localhost:8080): property checks on GetHealth + ListOrders.
 run-bt-orders-property: bt
@@ -52,8 +52,10 @@ run-integration-local: bt orders-api
 	curl -sf http://localhost:$${PORT:-8080}/health >/dev/null; \
 	./bt validate --config examples/orders-api/bt/backendtest.yaml --output json | jq -e '.valid == true' >/dev/null; \
 	./bt doctor --config examples/orders-api/bt/backendtest.yaml; \
-	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table; \
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --exclude schema-violation-acceptance-test; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy fuzz --safety safe --fuzz-iterations 20; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy contract; \
-	go test ./examples/orders-api/integration/... -tags integration -race -count=1
+	go test ./examples/orders-api/integration/... -tags integration -race -count=1; \
+	go test ./examples/orders-api -tags integration -race -count=1 -run TestSchemaViolationAcceptance; \
+	go test ./examples/graphql-api -tags integration -race -count=1 -run TestGQLSchemaViolationAcceptance

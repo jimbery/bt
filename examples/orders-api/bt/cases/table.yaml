@@ -1,5 +1,6 @@
 cases:
-  # Health check
+  # ── Health ──────────────────────────────────────────────────────────────
+
   - id: health-returns-200
     operation_id: GetHealth
     input:
@@ -7,8 +8,17 @@ cases:
       path: /health
     expected:
       status_code: 200
+      schema:
+        type: object
+        required: [status]
+        properties:
+          status:
+            type: string
+            enum: [ok]
+        additionalProperties: false
 
-  # List orders — empty store returns 200 with empty array
+  # ── List Orders ──────────────────────────────────────────────────────────
+
   - id: list-orders-empty
     operation_id: ListOrders
     input:
@@ -16,8 +26,18 @@ cases:
       path: /orders
     expected:
       status_code: 200
+      schema:
+        type: object
+        required: [orders, total]
+        properties:
+          orders:
+            type: array
+            items:
+              $ref: "#/components/schemas/Order"
+          total:
+            type: integer
+        additionalProperties: false
 
-  # List orders — valid status filter
   - id: list-orders-filter-pending
     operation_id: ListOrders
     input:
@@ -27,8 +47,18 @@ cases:
         status: pending
     expected:
       status_code: 200
+      schema:
+        type: object
+        required: [orders, total]
+        properties:
+          orders:
+            type: array
+            items:
+              $ref: "#/components/schemas/Order"
+          total:
+            type: integer
+        additionalProperties: false
 
-  # List orders — invalid status filter returns 400
   - id: list-orders-filter-invalid
     operation_id: ListOrders
     input:
@@ -38,8 +68,11 @@ cases:
         status: not_a_real_status
     expected:
       status_code: 400
+      schema:
+        $ref: "#/components/schemas/Error"
 
-  # Create order — valid request returns 201
+  # ── Create Order ─────────────────────────────────────────────────────────
+
   - id: create-order-valid
     operation_id: CreateOrder
     input:
@@ -53,8 +86,9 @@ cases:
         description: Integration test order
     expected:
       status_code: 201
+      schema:
+        $ref: "#/components/schemas/Order"
 
-  # Create order — missing amount returns 400
   - id: create-order-missing-amount
     operation_id: CreateOrder
     input:
@@ -66,8 +100,9 @@ cases:
         currency: GBP
     expected:
       status_code: 400
+      schema:
+        $ref: "#/components/schemas/Error"
 
-  # Create order — missing currency returns 400
   - id: create-order-missing-currency
     operation_id: CreateOrder
     input:
@@ -79,8 +114,9 @@ cases:
         amount: 100
     expected:
       status_code: 400
+      schema:
+        $ref: "#/components/schemas/Error"
 
-  # Create order — negative amount returns 400
   - id: create-order-negative-amount
     operation_id: CreateOrder
     input:
@@ -93,8 +129,11 @@ cases:
         currency: GBP
     expected:
       status_code: 400
+      schema:
+        $ref: "#/components/schemas/Error"
 
-  # Get order — non-existent ID returns 404
+  # ── Get Order ─────────────────────────────────────────────────────────────
+
   - id: get-order-not-found
     operation_id: GetOrder
     input:
@@ -102,3 +141,34 @@ cases:
       path: /orders/does-not-exist
     expected:
       status_code: 404
+      schema:
+        $ref: "#/components/schemas/Error"
+
+  # ── Deliberately wrong schema (acceptance test for violation reporting) ──
+
+  - id: schema-violation-acceptance-test
+    operation_id: CreateOrder
+    input:
+      method: POST
+      path: /orders
+      headers:
+        Content-Type: application/json
+      body:
+        amount: 100
+        currency: GBP
+    expected:
+      status_code: 201
+      schema:
+        type: object
+        required: [id, amount, currency, status, created_at]
+        properties:
+          id:
+            type: string
+          amount:
+            type: string
+          currency:
+            type: string
+          status:
+            type: string
+          created_at:
+            type: string

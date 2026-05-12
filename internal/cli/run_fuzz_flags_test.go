@@ -52,7 +52,7 @@ func TestRunCommand_FuzzFlags_AllAppearInHelp(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	output := buf.String()
-	for _, flag := range []string{"--safety", "--fuzz-iterations", "--corpus-dir"} {
+	for _, flag := range []string{"--safety", "--fuzz-iterations", "--corpus-dir", "--exclude"} {
 		if !bytes.Contains([]byte(output), []byte(flag)) {
 			t.Errorf("expected flag %q in 'bt run --help' output", flag)
 		}

@@ -1,7 +1,11 @@
 type Query {
   order(id: ID!): Order
   orders(status: OrderStatus): [Order!]!
-  health: String!
+  health: HealthStatus!
+}
+
+type HealthStatus {
+  status: String!
 }
 
 type Mutation {

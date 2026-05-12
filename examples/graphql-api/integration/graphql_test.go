@@ -103,6 +103,7 @@ func runGraphQLTableJSON(t *testing.T) ([]byte, string) {
 	cmd := exec.Command(bt, "run",
 		"--config", cfg,
 		"--strategy", "table",
+		"--exclude", "gql-schema-violation-acceptance-test",
 		"--output", "json",
 	)
 	cmd.Dir = root
@@ -123,6 +124,7 @@ func runGraphQLTableJSONWithConfig(t *testing.T, configRel string) []byte {
 	cmd := exec.Command(bt, "run",
 		"--config", configRel,
 		"--strategy", "table",
+		"--exclude", "gql-schema-violation-acceptance-test",
 		"--output", "json",
 	)
 	cmd.Dir = root
