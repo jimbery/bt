@@ -215,6 +215,10 @@ func TestPropertyRun_ArtifactBundle_ContainsGQLFields(t *testing.T) {
 			if !ok || len(failures) == 0 {
 				t.Errorf("expected non-empty failures array in artifact; got: %v", bundle["failures"])
 			}
+			exp, ok := bundle["expected"].(map[string]any)
+			if !ok || exp["schema"] == nil {
+				t.Errorf("artifact missing expected.schema (needed for replay to clear response_matches_schema); got expected=%v", bundle["expected"])
+			}
 			return
 		}
 	}

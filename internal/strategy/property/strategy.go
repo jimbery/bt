@@ -214,6 +214,9 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 				}
 			}
 		}
+		if exp := artifactExpectedForPropertyReplay(op, final); exp != nil {
+			artifact.Expected = exp
+		}
 		path, werr := s.opts.ArtifactWriter.Write(artifact)
 		if werr != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "warning: could not write property artifact: %v\n", werr)
@@ -222,6 +225,22 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 		}
 	}
 	return final
+}
+
+func artifactExpectedForPropertyReplay(op model.Operation, final model.Result) *model.CaseExpectation {
+	for _, f := range final.Failures {
+		if f.Invariant != model.InvariantResponseMatchesSchema {
+			continue
+		}
+		if len(op.Responses) == 0 || op.Responses[0].Schema == nil {
+			return nil
+		}
+		return &model.CaseExpectation{
+			StatusCode: final.StatusCode,
+			Schema:     op.Responses[0].Schema,
+		}
+	}
+	return nil
 }
 
 func evaluateInvariants(op model.Operation, res model.Result, invs []model.Invariant, idem *model.IdempotencyResult) []model.Failure {

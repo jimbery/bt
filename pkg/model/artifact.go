@@ -15,7 +15,8 @@ type Artifact struct {
 	// GQLOperationKind and GQLVariables mirror GraphQL HTTP payloads for tooling and replay (property strategy).
 	GQLOperationKind string         `json:"gql_operation_kind,omitempty"`
 	GQLVariables     map[string]any `json:"gql_variables,omitempty"`
-	// Expected is set for table-strategy artifacts when the case had expectations (used by replay for response_matches_schema).
+	// Expected is set for table-strategy artifacts and property failures on response_matches_schema
+	// (replay re-validates the new HTTP body against Expected.Schema when present).
 	Expected    *CaseExpectation `json:"expected,omitempty"`
 	ShrinkTrace []string         `json:"shrink_trace,omitempty"`
 	// AuthEnvName, when set, names the process env var from target.auth.env.
