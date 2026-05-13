@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -113,6 +114,15 @@ func newTraceInspectCmd() *cobra.Command {
 			prof, err := model.ParseProfile(path)
 			if err != nil {
 				return fmt.Errorf("trace profile %q: %w", path, err)
+			}
+			outFmt, err := cmd.Flags().GetString("output")
+			if err != nil {
+				return err
+			}
+			if strings.EqualFold(strings.TrimSpace(outFmt), "json") {
+				enc := json.NewEncoder(cmd.OutOrStdout())
+				enc.SetIndent("", "  ")
+				return enc.Encode(prof)
 			}
 			writeTraceInspect(cmd.OutOrStdout(), prof, path)
 			return nil
