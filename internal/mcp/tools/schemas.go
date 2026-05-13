@@ -30,6 +30,10 @@ var inputSuggestStrategy = json.RawMessage(`{
           "has_body": { "type": "boolean" }
         }
       }
+    },
+    "trace_profile": {
+      "type": "object",
+      "description": "Optional trace profile JSON (M12). When sequences include multiple start operations, the rules add a stateful strategy suggestion."
     }
   }
 }`)
@@ -74,7 +78,7 @@ var inputScaffoldConfig = json.RawMessage(`{
     },
     "strategies": {
       "type": "array",
-      "items": { "type": "string", "enum": ["table", "property", "fuzz", "contract"] },
+      "items": { "type": "string", "enum": ["table", "property", "fuzz", "contract", "stateful"] },
       "description": "Strategies to include. Defaults to [table] if omitted."
     },
     "output_path": {
@@ -94,7 +98,7 @@ var inputRun = json.RawMessage(`{
     },
     "strategy": {
       "type": "string",
-      "enum": ["table", "property", "fuzz", "contract", "all"],
+      "enum": ["table", "property", "fuzz", "contract", "stateful", "all"],
       "description": "Strategy to run. Defaults to the first strategy in the config if omitted."
     },
     "seed": {

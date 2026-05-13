@@ -15,7 +15,7 @@ import (
 	"github.com/jayimbery/bt/pkg/model"
 )
 
-const descRun = `bt_run executes a configured bt strategy (table, property, fuzz, contract, or all) and returns passed, failed, and artifact paths. After bt_run reports failures, use bt_explain_failure with the artifact_path for full detail.`
+const descRun = `bt_run executes a configured bt strategy (table, property, fuzz, contract, stateful, or all) and returns passed, failed, and artifact paths. After bt_run reports failures, use bt_explain_failure with the artifact_path for full detail.`
 
 // RunHandler implements the bt_run MCP tool.
 func RunHandler() registry.HandlerFunc {

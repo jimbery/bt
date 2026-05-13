@@ -16,6 +16,7 @@ import (
 	"github.com/jayimbery/bt/internal/strategy/contract"
 	"github.com/jayimbery/bt/internal/strategy/fuzz"
 	"github.com/jayimbery/bt/internal/strategy/property"
+	"github.com/jayimbery/bt/internal/strategy/stateful"
 	"github.com/jayimbery/bt/internal/strategy/table"
 	"github.com/jayimbery/bt/pkg/model"
 )
@@ -116,6 +117,15 @@ func BuildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, opt 
 		st = contract.NewWithOptions(contract.Options{
 			ArtifactWriter: replay.NewWriter(artifactDir),
 			Environment:    cfg.Target.Environment,
+		})
+	case strategy.KindStateful:
+		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
+		st = stateful.NewStrategy(stateful.Options{
+			ArtifactWriter:   replay.NewWriter(artifactDir),
+			Environment:      cfg.Target.Environment,
+			BaseURL:          strings.TrimSpace(cfg.Target.BaseURL),
+			ConfigDir:        filepath.Dir(cfgPath),
+			TraceProfilePath: ResolveTraceProfilePath(cfgPath, cfg),
 		})
 	default:
 		return nil, strategy.Spec{}, fmt.Errorf("unknown strategy: %q", strategyName)

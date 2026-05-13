@@ -1,0 +1,25 @@
+flows:
+  - id: create-and-retrieve-order
+    description: M13 hand-authored flow — create then GET by bound id
+    steps:
+      - id: create
+        operation_id: CreateOrder
+        input:
+          method: POST
+          path: /orders
+          body:
+            amount: 100
+            currency: GBP
+        expected:
+          status_code: 201
+        extract:
+          order_id:
+            from: "$.id"
+            into: path
+      - id: retrieve
+        operation_id: GetOrder
+        input:
+          method: GET
+          path: "/orders/{order_id}"
+        expected:
+          status_code: 200

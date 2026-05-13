@@ -15,6 +15,7 @@ const (
 	KindFuzz     Kind = "fuzz"
 	KindContract Kind = "contract"
 	KindGraph    Kind = "graph"
+	KindStateful Kind = "stateful"
 )
 
 // Spec carries the configuration for a single strategy run.

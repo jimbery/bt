@@ -16,6 +16,13 @@ const (
 	InvariantContract                    = "contract"
 )
 
+// Stateful-strategy failure kinds (M13).
+const (
+	InvariantStatefulStatus  = "stateful_status"
+	InvariantStatefulSchema  = "stateful_schema"
+	InvariantStatefulBinding = "stateful_binding"
+)
+
 // IdempotencyResult captures two HTTP responses for the same idempotent request pair.
 type IdempotencyResult struct {
 	IdempotencyKey string         `json:"idempotency_key"`

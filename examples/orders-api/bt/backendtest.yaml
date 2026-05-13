@@ -15,6 +15,9 @@ strategies:
   - type: table
     file: examples/orders-api/bt/cases/table.yaml
 
+  - type: stateful
+    file: examples/orders-api/bt/cases/stateful-flows.yaml
+
   # Property checks (Rapid): start the API on target.base_url first.
   # GetHealth + ListOrders are read-only GETs with stable 200 + JSON schemas.
   - type: property

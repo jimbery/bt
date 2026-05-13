@@ -23,4 +23,8 @@ type Artifact struct {
 	// AuthEnvSetInProcess is true if that variable was non-empty when the case ran.
 	AuthEnvName         string `json:"auth_env_name,omitempty"`
 	AuthEnvSetInProcess bool   `json:"auth_env_set_in_process,omitempty"`
+	// StatefulResult is set for stateful strategy artifacts (M13 replay).
+	StatefulResult *FlowResult `json:"stateful_result,omitempty"`
+	// StatefulFlow is the original flow definition (used for replay injection templates).
+	StatefulFlow *Flow `json:"stateful_flow,omitempty"`
 }
