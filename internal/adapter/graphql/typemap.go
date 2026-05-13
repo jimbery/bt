@@ -109,8 +109,10 @@ func definitionToSchemaRef(s *ast.Schema, def *ast.Definition, nullable bool, se
 
 func scalarToSchemaRef(name string) *model.SchemaRef {
 	switch name {
-	case "String", "ID":
+	case "String":
 		return &model.SchemaRef{Type: "string"}
+	case "ID":
+		return &model.SchemaRef{Type: "string", Format: "id"}
 	case "Int":
 		return &model.SchemaRef{Type: "integer"}
 	case "Float":

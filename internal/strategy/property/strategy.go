@@ -18,6 +18,7 @@ import (
 
 	"github.com/jayimbery/bt/internal/gqlcase"
 	"github.com/jayimbery/bt/internal/strategy"
+	gqlgen "github.com/jayimbery/bt/internal/strategy/graphql/gen"
 	"github.com/jayimbery/bt/internal/strategy/property/gen"
 	"github.com/jayimbery/bt/internal/strategy/property/invariant"
 	"github.com/jayimbery/bt/pkg/model"
@@ -165,7 +166,7 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 		}
 		failures := evaluateInvariants(op, res, s.invariants, idem)
 		tb.snapshot(res.Request, resp, nil)
-		if len(failures) > 0 {
+		if len(blockingFailures(failures)) > 0 {
 			tb.snapshot(res.Request, resp, failures)
 			rt.Errorf("property invariant failed (%d violation(s))", len(failures))
 		}
@@ -224,7 +225,7 @@ func evaluateInvariants(op model.Operation, res model.Result, invs []model.Invar
 		if !ok {
 			continue
 		}
-		out = append(out, fn(op, res, idem)...)
+		out = append(out, fn(inv, op, res, idem)...)
 	}
 	if !schemaConfigured {
 		out = append(out, invariant.ResponseMatchesSchema(op, res)...)
@@ -243,16 +244,14 @@ func wantsInvariantName(invs []model.Invariant, name string) bool {
 
 func buildCaseInput(t *rapid.T, op model.Operation, c model.Case, invs []model.Invariant) model.CaseInput {
 	if gqlcase.IsGraphQLOperation(op) {
-		in := gqlcase.MinimalInput(op)
+		in := model.CaseInput{
+			Method:   op.Method,
+			Path:     gqlcase.FillPathParams(op),
+			Headers:  map[string]string{"Content-Type": "application/json"},
+			GQLQuery: op.GQLDocument,
+		}
 		if len(op.GQLVariableTypes) > 0 {
-			in.GQLVariables = make(map[string]any, len(op.GQLVariableTypes))
-			for name, sch := range op.GQLVariableTypes {
-				if sch == nil {
-					in.GQLVariables[name] = nil
-					continue
-				}
-				in.GQLVariables[name] = gen.GenForSchema(sch).Draw(t, "gql_"+name)
-			}
+			in.GQLVariables = gqlgen.GenForOperation(op).Draw(t, "gql_vars")
 		}
 		if wantsInvariantName(invs, model.InvariantIdempotencyKeyPreventsDupes) {
 			if in.Headers == nil {
@@ -568,4 +567,15 @@ func (p *propTB) Failed() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.failed
+}
+
+func blockingFailures(failures []model.Failure) []model.Failure {
+	var out []model.Failure
+	for _, f := range failures {
+		if f.Classification == "graphql_warning" {
+			continue
+		}
+		out = append(out, f)
+	}
+	return out
 }

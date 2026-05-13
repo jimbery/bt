@@ -34,7 +34,7 @@ type StrategyChoice struct {
 
 var validConfidence = map[string]bool{"high": true, "medium": true, "low": true}
 var validInvariantType = map[string]bool{
-	"no_5xx": true, "response_matches_schema": true, "idempotency": true, "custom": true,
+	"no_5xx": true, "response_matches_schema": true, "no_gql_errors": true, "idempotency": true, "custom": true,
 }
 var validPriority = map[string]bool{
 	"recommended": true, "optional": true, "not_applicable": true,
