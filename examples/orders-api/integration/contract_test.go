@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/jayimbery/bt/internal/testutil"
 )
 
 // ContractRunResult mirrors the enriched JSON report from bt run --output json.
@@ -35,7 +37,7 @@ type ContractRunResult struct {
 
 func btBinaryContract(t *testing.T) string {
 	t.Helper()
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bin := filepath.Join(root, "bt")
 	if _, err := os.Stat(bin); err != nil {
 		t.Skip("bt binary not present; build with: go build -o bt ./cmd/bt")
@@ -46,7 +48,7 @@ func btBinaryContract(t *testing.T) string {
 func runContractJSON(t *testing.T) []byte {
 	t.Helper()
 	requireOrdersAPI(t)
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bt := btBinaryContract(t)
 	cmd := exec.Command(bt, "run",
 		"--config", "examples/orders-api/bt/backendtest.yaml",
@@ -192,7 +194,7 @@ func TestContractRun_WellFormedOperationsPass(t *testing.T) {
 
 func TestContractRun_ExitCodeZeroWhenOnlyQuarantinedFailures(t *testing.T) {
 	requireOrdersAPI(t)
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bt := btBinaryContract(t)
 	cmd := exec.Command(bt, "run",
 		"--config", "examples/orders-api/bt/backendtest.yaml",

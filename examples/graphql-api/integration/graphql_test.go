@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jayimbery/bt/internal/testutil"
 )
 
 // GraphQLRunResult mirrors the JSON report output of bt run --output json.
@@ -36,27 +38,9 @@ type GraphQLRunResult struct {
 	} `json:"results"`
 }
 
-func findRepoRoot(t *testing.T) string {
-	t.Helper()
-	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			t.Fatal("go.mod not found from", dir)
-		}
-		dir = parent
-	}
-}
-
 func btBinaryGraphQL(t *testing.T) string {
 	t.Helper()
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bin := filepath.Join(root, "bt")
 	if _, err := os.Stat(bin); err != nil {
 		t.Skip("bt binary not present; build with: go build -o bt ./cmd/bt")
@@ -97,7 +81,7 @@ func requireGraphQLAPI(t *testing.T, configPath string) {
 func runGraphQLTableJSON(t *testing.T) ([]byte, string) {
 	t.Helper()
 	requireGraphQLAPI(t, defaultGraphQLConfig())
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bt := btBinaryGraphQL(t)
 	cfg := defaultGraphQLConfig()
 	cmd := exec.Command(bt, "run",
@@ -119,7 +103,7 @@ func runGraphQLTableJSON(t *testing.T) ([]byte, string) {
 func runGraphQLTableJSONWithConfig(t *testing.T, configRel string) []byte {
 	t.Helper()
 	requireGraphQLAPI(t, configRel)
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bt := btBinaryGraphQL(t)
 	cmd := exec.Command(bt, "run",
 		"--config", configRel,

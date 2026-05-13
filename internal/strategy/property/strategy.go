@@ -204,6 +204,19 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 			Response:     final.Response,
 			Failures:     final.Failures,
 		}
+		if gqlcase.IsGraphQLOperation(op) {
+			artifact.GQLOperationKind = string(op.GQLKind)
+			artifact.GQLVariables = map[string]any{}
+			var payload map[string]any
+			if len(final.Request.Body) > 0 && json.Unmarshal(final.Request.Body, &payload) == nil {
+				if v, ok := payload["variables"].(map[string]any); ok && v != nil {
+					artifact.GQLVariables = v
+				}
+			}
+		}
+		if exp := artifactExpectedForPropertyReplay(op, final); exp != nil {
+			artifact.Expected = exp
+		}
 		path, werr := s.opts.ArtifactWriter.Write(artifact)
 		if werr != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "warning: could not write property artifact: %v\n", werr)
@@ -212,6 +225,22 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 		}
 	}
 	return final
+}
+
+func artifactExpectedForPropertyReplay(op model.Operation, final model.Result) *model.CaseExpectation {
+	for _, f := range final.Failures {
+		if f.Invariant != model.InvariantResponseMatchesSchema {
+			continue
+		}
+		if len(op.Responses) == 0 || op.Responses[0].Schema == nil {
+			return nil
+		}
+		return &model.CaseExpectation{
+			StatusCode: final.StatusCode,
+			Schema:     op.Responses[0].Schema,
+		}
+	}
+	return nil
 }
 
 func evaluateInvariants(op model.Operation, res model.Result, invs []model.Invariant, idem *model.IdempotencyResult) []model.Failure {
@@ -354,6 +383,19 @@ func requestDetailFromInput(in model.CaseInput) model.RequestDetail {
 		URL:     in.Path,
 		Headers: cloneStringMap(in.Headers),
 		Query:   cloneStringMap(in.Query),
+	}
+	if in.IsGraphQL() {
+		payload := map[string]any{"query": in.GQLQuery}
+		if strings.TrimSpace(in.GQLOperationName) != "" {
+			payload["operationName"] = in.GQLOperationName
+		}
+		if in.GQLVariables != nil {
+			payload["variables"] = in.GQLVariables
+		}
+		if b, err := json.Marshal(payload); err == nil {
+			rd.Body = b
+		}
+		return rd
 	}
 	if in.Body != nil {
 		if b, err := json.Marshal(in.Body); err == nil {

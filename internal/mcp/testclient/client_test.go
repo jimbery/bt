@@ -7,29 +7,12 @@ import (
 	"testing"
 
 	"github.com/jayimbery/bt/internal/mcp/testclient"
+	"github.com/jayimbery/bt/internal/testutil"
 )
-
-func findRepoRoot(t *testing.T) string {
-	t.Helper()
-	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			t.Fatal("go.mod not found")
-		}
-		dir = parent
-	}
-}
 
 func btBinary(t *testing.T) string {
 	t.Helper()
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	p := filepath.Join(root, "bt")
 	if _, err := os.Stat(p); err != nil {
 		t.Skip("bt binary not found; build with: go build -o bt ./cmd/bt")

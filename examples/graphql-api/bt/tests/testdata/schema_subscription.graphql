@@ -1,0 +1,11 @@
+type Query {
+  ping: Boolean!
+}
+
+type Mutation {
+  noop: Boolean!
+}
+
+type Subscription {
+  orderUpdated(id: ID!): Boolean
+}

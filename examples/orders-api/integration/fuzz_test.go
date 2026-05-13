@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"sync"
 	"testing"
+
+	"github.com/jayimbery/bt/internal/testutil"
 )
 
 type fuzzReport struct {
@@ -38,7 +40,7 @@ func runFuzzTests(t *testing.T) fuzzReport {
 
 	beforeDeletes := getDeleteCount(t)
 
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bin := filepath.Join(root, "bt")
 	if _, err := os.Stat(bin); err != nil {
 		t.Skip("bt binary not present; build with: go build -o bt ./cmd/bt")

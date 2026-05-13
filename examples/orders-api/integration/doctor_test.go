@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jayimbery/bt/internal/testutil"
 )
 
 type DoctorCheckResult struct {
@@ -25,7 +27,7 @@ type DoctorOutput struct {
 
 func btBinaryDoctor(t *testing.T) string {
 	t.Helper()
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bin := filepath.Join(root, "bt")
 	if _, err := os.Stat(bin); err != nil {
 		t.Skip("bt binary not present; build with: go build -o bt ./cmd/bt")
@@ -36,7 +38,7 @@ func btBinaryDoctor(t *testing.T) string {
 func runDoctorJSON(t *testing.T) []byte {
 	t.Helper()
 	requireOrdersAPI(t)
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bt := btBinaryDoctor(t)
 	cmd := exec.Command(bt, "doctor",
 		"--config", "examples/orders-api/bt/backendtest.yaml",

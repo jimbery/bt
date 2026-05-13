@@ -3,6 +3,7 @@ package cli
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -10,6 +11,8 @@ import (
 	"github.com/jayimbery/bt/internal/config"
 	"github.com/jayimbery/bt/internal/replay"
 	"github.com/jayimbery/bt/internal/runner"
+	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
+	"github.com/jayimbery/bt/pkg/model"
 )
 
 func newReplayCmd() *cobra.Command {
@@ -54,15 +57,26 @@ func newReplayCmd() *cobra.Command {
 			_, _ = fmt.Fprintf(w, "\nOriginal response: HTTP %d\n", artifact.Response.StatusCode)
 			_, _ = fmt.Fprintf(w, "\nRe-executing request against %s...\n", cfg.Target.BaseURL)
 
-			r := runner.New(runner.Config{
-				BaseURL: cfg.Target.BaseURL,
-				Timeout: runner.DefaultTimeout,
-			})
+			baseURL := strings.TrimRight(strings.TrimSpace(cfg.Target.BaseURL), "/")
 
 			input := artifact.Request.AsCaseInput()
-			resp, err := r.Run(cmd.Context(), input)
-			if err != nil {
-				return fmt.Errorf("replay request failed: %w", err)
+			var resp model.ResponseDetail
+			var runErr error
+			if input.IsGraphQL() {
+				gqlExec := gqlrunner.New(gqlrunner.Config{
+					BaseURL: baseURL,
+					Timeout: runner.DefaultTimeout,
+				})
+				resp, runErr = gqlExec.Run(cmd.Context(), input)
+			} else {
+				r := runner.New(runner.Config{
+					BaseURL: baseURL,
+					Timeout: runner.DefaultTimeout,
+				})
+				resp, runErr = r.Run(cmd.Context(), input)
+			}
+			if runErr != nil {
+				return fmt.Errorf("replay request failed: %w", runErr)
 			}
 
 			_, _ = fmt.Fprintf(w, "New response:      HTTP %d\n\n", resp.StatusCode)

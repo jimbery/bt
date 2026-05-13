@@ -1,0 +1,25 @@
+version: 1
+
+target:
+  name: graphql-api
+  base_url: http://localhost:8090
+  schema: examples/graphql-api/schema.graphql
+  adapter: graphql
+
+strategies:
+  - type: property
+    config:
+      checks: 100
+    invariants:
+      - no_gql_errors
+      - response_matches_schema
+    operations:
+      - createOrder
+      - order
+
+report:
+  formats: [console, json]
+  output_dir: examples/graphql-api/bt/.bt/reports
+
+safety:
+  profile: safe

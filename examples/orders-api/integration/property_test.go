@@ -11,25 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-)
 
-func findRepoRoot(t *testing.T) string {
-	t.Helper()
-	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			t.Fatal("go.mod not found from", dir)
-		}
-		dir = parent
-	}
-}
+	"github.com/jayimbery/bt/internal/testutil"
+)
 
 func requireOrdersAPI(t *testing.T) {
 	t.Helper()
@@ -84,7 +68,7 @@ func runPropertyTests(t *testing.T) propertyReport {
 	t.Helper()
 	requireOrdersAPI(t)
 
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bin := filepath.Join(root, "bt")
 	if _, err := os.Stat(bin); err != nil {
 		t.Skip("bt binary not present; build with: go build -o bt ./cmd/bt")
@@ -234,7 +218,7 @@ func TestPropertyIntegration_PassingRun_ReplaySeed(t *testing.T) {
 		t.Skip("no failing result with a seed — skipping replay determinism check")
 	}
 
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bin := filepath.Join(root, "bt")
 	reportFile := filepath.Join(t.TempDir(), "replay-report.json")
 	cmd := exec.Command(

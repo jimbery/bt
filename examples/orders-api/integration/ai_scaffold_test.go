@@ -10,12 +10,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jayimbery/bt/internal/testutil"
+
 	"gopkg.in/yaml.v3"
 )
 
 func btBinaryForAIScaffold(t *testing.T) string {
 	t.Helper()
-	p := filepath.Join(findRepoRoot(t), "bt")
+	p := filepath.Join(testutil.RepoRoot(t), "bt")
 	if _, err := os.Stat(p); err != nil {
 		t.Skip("bt binary not found; build with: go build -o bt ./cmd/bt")
 	}
@@ -28,7 +30,7 @@ func ordersSchemaRelativePath() string {
 
 func defaultMCPConfigPath(t *testing.T) string {
 	t.Helper()
-	return filepath.Join(findRepoRoot(t), "examples", "orders-api", "bt", "backendtest.yaml")
+	return filepath.Join(testutil.RepoRoot(t), "examples", "orders-api", "bt", "backendtest.yaml")
 }
 
 // envWithoutAnthropicKey returns a copy of env with ANTHROPIC_API_KEY removed so
@@ -50,7 +52,7 @@ func callMCPTool(t *testing.T, tool string, input map[string]any, env []string) 
 	if err != nil {
 		t.Fatalf("marshal input: %v", err)
 	}
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bt := btBinaryForAIScaffold(t)
 	cmd := exec.Command(bt, "mcp", "call", tool,
 		"--input", string(inputJSON),
@@ -182,7 +184,7 @@ func TestAIScaffold_SuggestInvariants_UnknownOperation_ReturnsStructuredError(t 
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bt := btBinaryForAIScaffold(t)
 	cmd := exec.Command(bt, "mcp", "call", "bt_suggest_invariants",
 		"--input", string(inputJSON),
