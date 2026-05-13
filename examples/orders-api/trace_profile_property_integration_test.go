@@ -109,7 +109,7 @@ func TestProperty_CreateOrder_UsesTraceCurrencyDistribution(t *testing.T) {
 
 	st := property.NewWithOptions(property.Options{
 		ArtifactWriter: replay.NewWriter(filepath.Join(t.TempDir(), "artifacts")),
-		TraceProfile:     prof,
+		TraceProfile:   prof,
 	})
 	spec := strategy.Spec{
 		Kind:       strategy.KindProperty,
