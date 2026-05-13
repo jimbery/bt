@@ -9,29 +9,12 @@ import (
 	"testing"
 
 	"github.com/jayimbery/bt/internal/cli"
+	"github.com/jayimbery/bt/internal/testutil"
 )
-
-func findRepoRootForMCPCall(t *testing.T) string {
-	t.Helper()
-	dir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir
-		}
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			t.Fatal("go.mod not found")
-		}
-		dir = parent
-	}
-}
 
 func btBinaryForMCPCall(t *testing.T) string {
 	t.Helper()
-	p := filepath.Join(findRepoRootForMCPCall(t), "bt")
+	p := filepath.Join(testutil.RepoRoot(t), "bt")
 	if _, err := os.Stat(p); err != nil {
 		t.Skip("bt binary not found; build with: go build -o bt ./cmd/bt")
 	}
@@ -61,7 +44,7 @@ func TestMCPCallCommand_InputFlagExists(t *testing.T) {
 func TestMCPCallCommand_UnknownTool_ExitsNonZero(t *testing.T) {
 	bt := btBinaryForMCPCall(t)
 	cmd := exec.Command(bt, "mcp", "call", "bt_does_not_exist", "--input", "{}")
-	cmd.Dir = findRepoRootForMCPCall(t)
+	cmd.Dir = testutil.RepoRoot(t)
 	out, err := cmd.CombinedOutput()
 	if err == nil {
 		t.Errorf("expected non-zero exit for unknown tool; output: %s", out)
@@ -73,7 +56,7 @@ func TestMCPCallCommand_ValidTool_OutputIsJSON(t *testing.T) {
 	cmd := exec.Command(bt, "mcp", "call", "bt_validate",
 		"--input", `{"config_path":"/does/not/exist.yaml"}`,
 	)
-	cmd.Dir = findRepoRootForMCPCall(t)
+	cmd.Dir = testutil.RepoRoot(t)
 	out, err := cmd.Output()
 	if err != nil {
 		t.Fatalf("mcp call: %v\n%s", err, cmd.Stderr)

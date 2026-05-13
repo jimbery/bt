@@ -16,7 +16,7 @@ func TestSuggestInvariants_GraphQLQuery_IncludesGQLInvariants(t *testing.T) {
 	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/graphql-api/schema.graphql")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(`[{"name":"no_5xx","rationale":"x","confidence":"high","invariant_type":"no_5xx"}]`))
-	raw, err := h(context.Background(), mustJSON(t, map[string]string{
+	raw, err := h(context.Background(), testutil.MustJSON(t, map[string]string{
 		"schema_path":  schema,
 		"operation_id": "orders",
 	}))
@@ -44,7 +44,7 @@ func TestSuggestInvariants_GraphQL_GQLSuggestionsAppearFirst(t *testing.T) {
 	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/graphql-api/schema.graphql")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(`[{"name":"no_5xx","rationale":"x","confidence":"high","invariant_type":"no_5xx"}]`))
-	raw, err := h(context.Background(), mustJSON(t, map[string]string{
+	raw, err := h(context.Background(), testutil.MustJSON(t, map[string]string{
 		"schema_path":  schema,
 		"operation_id": "createOrder",
 	}))
@@ -79,7 +79,7 @@ func TestSuggestInvariants_OpenAPI_DoesNotIncludeGQLInvariants(t *testing.T) {
 	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/orders-api/spec/openapi.yaml")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(tools.DefaultInvariantStubJSON))
-	raw, err := h(context.Background(), mustJSON(t, map[string]string{
+	raw, err := h(context.Background(), testutil.MustJSON(t, map[string]string{
 		"schema_path":  schema,
 		"operation_id": "GetHealth",
 	}))
@@ -98,15 +98,6 @@ func TestSuggestInvariants_OpenAPI_DoesNotIncludeGQLInvariants(t *testing.T) {
 	if containsStr(names, model.InvariantNoGQLErrors) {
 		t.Errorf("REST operation should not get no_gql_errors, got %v", names)
 	}
-}
-
-func mustJSON(t *testing.T, v any) json.RawMessage {
-	t.Helper()
-	b, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return b
 }
 
 func suggestionNames(s []struct {

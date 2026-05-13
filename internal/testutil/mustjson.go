@@ -1,13 +1,12 @@
-//go:build integration
-
-package tests_test
+package testutil
 
 import (
 	"encoding/json"
 	"testing"
 )
 
-func mustJSON(t *testing.T, v any) json.RawMessage {
+// MustJSON marshals v to JSON or fails the test.
+func MustJSON(t testing.TB, v any) json.RawMessage {
 	t.Helper()
 	b, err := json.Marshal(v)
 	if err != nil {

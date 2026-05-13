@@ -12,11 +12,12 @@ import (
 	"time"
 
 	"github.com/jayimbery/bt/internal/mcp/testclient"
+	"github.com/jayimbery/bt/internal/testutil"
 )
 
 func newMCPClient(t *testing.T) *testclient.Client {
 	t.Helper()
-	root := findRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	bin := filepath.Join(root, "bt")
 	if _, err := os.Stat(bin); err != nil {
 		t.Skip("bt binary not present; build with: go build -o bt ./cmd/bt")
@@ -34,17 +35,17 @@ func newMCPClient(t *testing.T) *testclient.Client {
 
 func ordersSchemaPath(t *testing.T) string {
 	t.Helper()
-	return filepath.Join(findRepoRoot(t), "examples", "orders-api", "spec", "openapi.yaml")
+	return filepath.Join(testutil.RepoRoot(t), "examples", "orders-api", "spec", "openapi.yaml")
 }
 
 func ordersConfigPath(t *testing.T) string {
 	t.Helper()
-	return filepath.Join(findRepoRoot(t), "examples", "orders-api", "bt", "backendtest.yaml")
+	return filepath.Join(testutil.RepoRoot(t), "examples", "orders-api", "bt", "backendtest.yaml")
 }
 
 func ordersFailuresConfigPath(t *testing.T) string {
 	t.Helper()
-	return filepath.Join(findRepoRoot(t), "examples", "orders-api", "bt", "backendtest-failures.yaml")
+	return filepath.Join(testutil.RepoRoot(t), "examples", "orders-api", "bt", "backendtest-failures.yaml")
 }
 
 func call(t *testing.T, client *testclient.Client, tool string, input map[string]any) map[string]any {

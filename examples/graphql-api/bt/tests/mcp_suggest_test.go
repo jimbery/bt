@@ -19,7 +19,7 @@ func TestMCPSuggestInvariants_GraphQLQuery_ReturnsGQLSuggestionsFirst(t *testing
 	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/graphql-api/schema.graphql")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(`[{"name":"no_5xx","rationale":"x","confidence":"high","invariant_type":"no_5xx"}]`))
-	raw, err := h(context.Background(), mustJSON(t, map[string]string{
+	raw, err := h(context.Background(), testutil.MustJSON(t, map[string]string{
 		"schema_path":  schema,
 		"operation_id": "order",
 	}))
@@ -82,7 +82,7 @@ func TestMCPSuggestInvariants_GraphQLMutation_ReturnsGQLSuggestionsFirst(t *test
 	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/graphql-api/schema.graphql")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(`[{"name":"no_5xx","rationale":"x","confidence":"high","invariant_type":"no_5xx"}]`))
-	raw, err := h(context.Background(), mustJSON(t, map[string]string{
+	raw, err := h(context.Background(), testutil.MustJSON(t, map[string]string{
 		"schema_path":  schema,
 		"operation_id": "createOrder",
 	}))
@@ -107,7 +107,7 @@ func TestMCPSuggestInvariants_Subscription_NoPropertyGQLInvariants(t *testing.T)
 	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/graphql-api/bt/tests/testdata/schema_subscription.graphql")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(`[{"name":"no_5xx","rationale":"x","confidence":"high","invariant_type":"no_5xx"}]`))
-	raw, err := h(context.Background(), mustJSON(t, map[string]string{
+	raw, err := h(context.Background(), testutil.MustJSON(t, map[string]string{
 		"schema_path":  schema,
 		"operation_id": "orderUpdated",
 	}))
