@@ -98,6 +98,8 @@ jobs:
           done
           curl -sf http://localhost:8091/health >/dev/null
           GRAPHQL_BT_CONFIG=examples/graphql-api/bt/backendtest-bug.yaml BT_GQL_AMOUNT_BUG=1 go test ./examples/graphql-api/integration/... -tags=integration -run TestGraphQLRun_AmountBugDetected -count=1 -v
+          # Table strategy writes failure artifacts too; they have no seed. Clear before property run so replay uses a property bundle.
+          rm -f examples/graphql-api/bt/.bt/artifacts/*.json
           set +e
           ./bt run --config examples/graphql-api/bt/backendtest-property-bug.yaml --strategy property --adapter graphql --checks 50 --output json > gql-property-bug.json
           bt_exit=$?
@@ -111,14 +113,17 @@ jobs:
             cat gql-property-bug.json
             exit 1
           fi
-          ARTIFACT=$(ls examples/graphql-api/bt/.bt/artifacts/*.json 2>/dev/null | head -1)
+          ARTIFACT=""
+          for f in examples/graphql-api/bt/.bt/artifacts/*.json; do
+            [ -f "$f" ] || continue
+            if grep -q '"strategy_kind": "property"' "$f" && grep -q '"seed"' "$f"; then
+              ARTIFACT="$f"
+              break
+            fi
+          done
           if [ -z "$ARTIFACT" ]; then
-            echo "ERROR: expected a property failure artifact under examples/graphql-api/bt/.bt/artifacts"
-            exit 1
-          fi
-          if ! grep -q '"seed"' "$ARTIFACT"; then
-            echo "ERROR: artifact missing seed"
-            cat "$ARTIFACT"
+            echo "ERROR: expected a property failure artifact with seed under examples/graphql-api/bt/.bt/artifacts"
+            ls -la examples/graphql-api/bt/.bt/artifacts/ || true
             exit 1
           fi
           kill "$(cat /tmp/graphql-api-8091.pid)" 2>/dev/null || true
