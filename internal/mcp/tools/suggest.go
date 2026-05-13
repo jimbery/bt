@@ -14,7 +14,7 @@ import (
 	"github.com/jayimbery/bt/pkg/model"
 )
 
-const descSuggestStrategy = `bt_suggest_strategy takes operation summaries from bt_discover_operations and returns strategy recommendations (table, property, fuzz, contract) with rationale for each operation. With an AI API key configured, responses use an AI model; otherwise deterministic rules are used.`
+const descSuggestStrategy = `bt_suggest_strategy takes operation summaries from bt_discover_operations and returns strategy recommendations (table, property, fuzz, contract, stateful) with rationale for each operation. Optional trace_profile JSON enables stateful when sequence data is present. With an AI API key configured, responses use an AI model; otherwise deterministic rules are used.`
 
 // SuggestStrategyHandler implements the bt_suggest_strategy MCP tool.
 // Pass nil provider to use rule-based recommendations only.
@@ -26,6 +26,7 @@ func SuggestStrategyHandler(p ai.Provider) registry.HandlerFunc {
 				Method  string `json:"method"`
 				HasBody *bool  `json:"has_body"`
 			} `json:"operations"`
+			TraceProfile json.RawMessage `json:"trace_profile,omitempty"`
 		}
 		if err := json.Unmarshal(input, &in); err != nil {
 			return nil, fmt.Errorf("decode input: %w", err)
@@ -34,7 +35,15 @@ func SuggestStrategyHandler(p ai.Provider) registry.HandlerFunc {
 			return nil, fmt.Errorf("operations is required")
 		}
 
-		ruleRecs := ruleBasedRecommendations(in.Operations)
+		var traceProf *model.TraceProfile
+		if len(in.TraceProfile) > 0 {
+			var tp model.TraceProfile
+			if err := json.Unmarshal(in.TraceProfile, &tp); err == nil {
+				traceProf = &tp
+			}
+		}
+
+		ruleRecs := ruleBasedRecommendations(in.Operations, traceProf)
 		provider := "rules"
 
 		if p != nil {
@@ -124,12 +133,13 @@ func ruleBasedRecommendations(ops []struct {
 	ID      string `json:"id"`
 	Method  string `json:"method"`
 	HasBody *bool  `json:"has_body"`
-}) []map[string]any {
+}, trace *model.TraceProfile) []map[string]any {
+	withStateful := traceProfileSuggestsStateful(trace)
 	recs := make([]map[string]any, 0, len(ops))
 	for _, op := range ops {
 		m := strings.ToUpper(strings.TrimSpace(op.Method))
 		hasBody := op.HasBody != nil && *op.HasBody
-		strategies := suggestForOperation(m, hasBody)
+		strategies := suggestForOperation(m, hasBody, withStateful)
 		recs = append(recs, map[string]any{
 			"operation_id": op.ID,
 			"strategies":   strategies,
@@ -138,7 +148,36 @@ func ruleBasedRecommendations(ops []struct {
 	return recs
 }
 
-func suggestForOperation(method string, hasBody bool) []map[string]any {
+func traceProfileSuggestsStateful(p *model.TraceProfile) bool {
+	if p == nil || p.Sequences == nil {
+		return false
+	}
+	return len(p.Sequences.StartProbability) >= 2
+}
+
+func insertStatefulAfterProperty(strats []map[string]any) []map[string]any {
+	item := map[string]any{
+		"strategy":  "stateful",
+		"priority":  "optional",
+		"rationale": "A trace profile with sequence data is present. The stateful strategy can generate multi-step flows from the observed operation sequences.",
+	}
+	for i, s := range strats {
+		if name, _ := s["strategy"].(string); name == "property" {
+			return append(append(append([]map[string]any(nil), strats[:i+1]...), item), strats[i+1:]...)
+		}
+	}
+	for i, s := range strats {
+		if name, _ := s["strategy"].(string); name == "fuzz" {
+			return append(append(append([]map[string]any(nil), strats[:i]...), item), strats[i:]...)
+		}
+	}
+	if len(strats) == 0 {
+		return []map[string]any{item}
+	}
+	return append(append([]map[string]any(nil), strats[:len(strats)-1]...), item, strats[len(strats)-1])
+}
+
+func suggestForOperation(method string, hasBody, withStateful bool) []map[string]any {
 	contract := map[string]any{"strategy": "contract", "rationale": "Contract checks can validate declared responses for any HTTP operation.", "priority": "optional"}
 
 	add := func(out *[]map[string]any, strategy, rationale, priority string) {
@@ -175,5 +214,8 @@ func suggestForOperation(method string, hasBody bool) []map[string]any {
 		add(&out, "fuzz", "Fuzzing may still find robustness issues.", "optional")
 	}
 	out = append(out, contract)
+	if withStateful {
+		out = insertStatefulAfterProperty(out)
+	}
 	return out
 }

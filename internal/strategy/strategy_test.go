@@ -99,6 +99,7 @@ func TestStrategy_KindConstants_NonEmptyAndDistinct(t *testing.T) {
 		strategy.KindProperty,
 		strategy.KindFuzz,
 		strategy.KindContract,
+		strategy.KindStateful,
 		strategy.KindGraph,
 	}
 

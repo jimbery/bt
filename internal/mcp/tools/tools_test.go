@@ -255,6 +255,47 @@ func TestSuggestStrategy_EachRecommendation_HasRationale(t *testing.T) {
 	}
 }
 
+func TestSuggestStrategy_WithTraceProfile_SuggestsStateful(t *testing.T) {
+	h := tools.SuggestStrategyHandler(nil)
+	input := mustMarshal(t, map[string]any{
+		"operations": []any{
+			map[string]any{"id": "CreateOrder", "method": "POST", "has_body": true},
+		},
+		"trace_profile": map[string]any{
+			"schema_version": "1",
+			"operations":     map[string]any{},
+			"sequences": map[string]any{
+				"start_probability": map[string]any{"CreateOrder": 0.85, "ListOrders": 0.15},
+				"transitions": map[string]any{
+					"CreateOrder": map[string]any{"GetOrder": 0.87, "__END__": 0.13},
+				},
+			},
+		},
+	})
+	result, err := h(context.Background(), input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var resp struct {
+		Recommendations []struct {
+			Strategies []struct {
+				Strategy string `json:"strategy"`
+			} `json:"strategies"`
+		} `json:"recommendations"`
+	}
+	mustUnmarshal(t, result, &resp)
+	found := false
+	for _, s := range resp.Recommendations[0].Strategies {
+		if s.Strategy == "stateful" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("expected stateful strategy in recommendations when trace_profile has multiple start operations")
+	}
+}
+
 func TestValidate_ValidConfig_ReturnsValidTrue(t *testing.T) {
 	configPath := writeMinimalConfig(t)
 	h := tools.ValidateHandler()

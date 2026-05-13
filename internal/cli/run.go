@@ -38,7 +38,7 @@ func newRunCmd() *cobra.Command {
 			runAll := strings.EqualFold(strings.TrimSpace(strategyName), "all")
 			strategyList := []string{strategyName}
 			if runAll {
-				strategyList = []string{"table", "property", "fuzz", "contract"}
+				strategyList = []string{"table", "property", "fuzz", "contract", "stateful"}
 			}
 			outputFormat, err := cmd.Flags().GetString("output")
 			if err != nil {

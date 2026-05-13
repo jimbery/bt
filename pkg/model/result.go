@@ -33,6 +33,8 @@ type Result struct {
 	// SchemaViolations lists response body schema disagreements (table strategy, etc.).
 	// Encoding always uses a JSON array, never null.
 	SchemaViolations []SchemaViolation `json:"schema_violations,omitempty"`
+	// StatefulResult is set when strategy_kind is stateful (M13).
+	StatefulResult *FlowResult `json:"stateful_result,omitempty"`
 }
 
 type Failure struct {
@@ -115,6 +117,7 @@ func (r Result) MarshalJSON() ([]byte, error) {
 		Response          ResponseDetail    `json:"response"`
 		ArtifactPath      string            `json:"artifact_path,omitempty"`
 		SchemaViolations  []SchemaViolation `json:"schema_violations"`
+		StatefulResult    *FlowResult       `json:"stateful_result,omitempty"`
 	}
 	sv := r.SchemaViolations
 	if sv == nil {
@@ -143,6 +146,7 @@ func (r Result) MarshalJSON() ([]byte, error) {
 		Response:          r.Response,
 		ArtifactPath:      r.ArtifactPath,
 		SchemaViolations:  sv,
+		StatefulResult:    r.StatefulResult,
 	})
 }
 
@@ -170,6 +174,7 @@ func (r *Result) UnmarshalJSON(data []byte) error {
 		Response          ResponseDetail    `json:"response"`
 		ArtifactPath      string            `json:"artifact_path,omitempty"`
 		SchemaViolations  []SchemaViolation `json:"schema_violations"`
+		StatefulResult    *FlowResult       `json:"stateful_result,omitempty"`
 	}
 	var aux in
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -197,6 +202,7 @@ func (r *Result) UnmarshalJSON(data []byte) error {
 	r.Response = aux.Response
 	r.ArtifactPath = aux.ArtifactPath
 	r.SchemaViolations = aux.SchemaViolations
+	r.StatefulResult = aux.StatefulResult
 	if r.SchemaViolations == nil {
 		r.SchemaViolations = []SchemaViolation{}
 	}

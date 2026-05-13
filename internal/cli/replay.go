@@ -12,6 +12,7 @@ import (
 	"github.com/jayimbery/bt/internal/replay"
 	"github.com/jayimbery/bt/internal/runner"
 	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
+	"github.com/jayimbery/bt/internal/strategy/stateful"
 	"github.com/jayimbery/bt/pkg/model"
 )
 
@@ -58,6 +59,24 @@ func newReplayCmd() *cobra.Command {
 			_, _ = fmt.Fprintf(w, "\nRe-executing request against %s...\n", cfg.Target.BaseURL)
 
 			baseURL := strings.TrimRight(strings.TrimSpace(cfg.Target.BaseURL), "/")
+
+			if strings.EqualFold(strings.TrimSpace(artifact.StrategyKind), "stateful") {
+				if artifact.StatefulFlow == nil || artifact.StatefulResult == nil {
+					return fmt.Errorf("stateful artifact missing stateful_flow or stateful_result")
+				}
+				rnr := stateful.NewRunner(stateful.Config{BaseURL: baseURL})
+				fr, repErr := rnr.ReplayArtifact(cmd.Context(), artifact)
+				if repErr != nil {
+					return fmt.Errorf("stateful replay: %w", repErr)
+				}
+				_, _ = fmt.Fprintf(w, "Replayed flow %q: %d steps, passed=%v\n", fr.FlowID, len(fr.Steps), fr.Passed)
+				if !fr.Passed {
+					_, _ = fmt.Fprintf(w, "Result: FAIL — flow still failing after replay\n")
+					return fmt.Errorf("%w", ErrReplayFailurePresent)
+				}
+				_, _ = fmt.Fprintf(w, "Result: PASS — flow passes on replay\n")
+				return nil
+			}
 
 			input := artifact.Request.AsCaseInput()
 			var resp model.ResponseDetail
