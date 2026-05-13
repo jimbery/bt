@@ -241,3 +241,36 @@ func TestTraceInspect_WritesSummary(t *testing.T) {
 		t.Fatalf("expected inspect to mention CreateOrder; got:\n%s", s)
 	}
 }
+
+func TestTraceInspect_JSONOutput(t *testing.T) {
+	dir := t.TempDir()
+	harPath := filepath.Join(dir, "sample.har")
+	specPath := writeMinimalOpenAPISpec(t, dir)
+	casesPath := writeMinimalCases(t, dir)
+	cfgPath := writeTraceTestConfig(t, dir, specPath, casesPath, ".bt/trace/profile.json")
+	writeOrdersHAR(t, harPath, 5)
+
+	importCmd := cli.NewRootCmd()
+	importCmd.SetArgs([]string{"--config", cfgPath, "trace", "import", harPath})
+	if err := importCmd.Execute(); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+
+	var out bytes.Buffer
+	inspectCmd := cli.NewRootCmd()
+	inspectCmd.SetOut(&out)
+	inspectCmd.SetArgs([]string{"--config", cfgPath, "trace", "inspect", "--output", "json"})
+	if err := inspectCmd.Execute(); err != nil {
+		t.Fatalf("trace inspect: %v", err)
+	}
+	if !json.Valid(out.Bytes()) {
+		t.Fatalf("inspect output is not valid JSON: %s", out.String())
+	}
+	var doc map[string]any
+	if err := json.Unmarshal(out.Bytes(), &doc); err != nil {
+		t.Fatal(err)
+	}
+	if doc["schema_version"] == nil {
+		t.Fatal("missing schema_version in JSON inspect")
+	}
+}

@@ -2,6 +2,7 @@ package gen
 
 import (
 	"math"
+	"math/rand/v2"
 	"sort"
 
 	"pgregory.net/rapid"
@@ -114,11 +115,12 @@ func distributionGen(_ *model.SchemaRef, dist map[string]float64, fallback *rapi
 	if len(ch) == 0 {
 		return fallback
 	}
-	choices := make([]any, len(ch))
-	for i, s := range ch {
-		choices[i] = s
-	}
-	return rapid.SampledFrom(choices)
+	// rapid.SampledFrom over a large multiset is biased under Rapid's internal indexing;
+	// uniform index into the 1000-slot multiset matches the intended trace frequencies.
+	return rapid.Custom(func(t *rapid.T) any {
+		_ = rapid.Bool().Draw(t, "dist_rng")
+		return ch[rand.IntN(len(ch))]
+	})
 }
 
 // TraceDistributionChoices expands a normalised distribution to a 1000-slot multiset (for tests / diagnostics).

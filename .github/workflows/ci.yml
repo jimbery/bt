@@ -179,6 +179,21 @@ jobs:
       - name: Ensure bt report directory
         run: mkdir -p examples/orders-api/bt/.bt/reports
 
+      - name: Orders API — trace import + inspect (M12.5)
+        run: |
+          set -e
+          mkdir -p examples/orders-api/bt/.bt/trace
+          ./bt --config examples/orders-api/bt/backendtest.yaml trace import examples/orders-api/bt/trace/sample.har
+          test -f examples/orders-api/bt/.bt/trace/profile.json
+          ./bt --config examples/orders-api/bt/backendtest.yaml trace inspect --output json | jq -e '.schema_version == "1"' >/dev/null
+          ./bt --config examples/orders-api/bt/backendtest.yaml trace inspect --output json | jq -e '.operations.CreateOrder.call_count >= 90' >/dev/null
+          echo "OK: trace profile import and JSON inspect"
+
+      - name: Orders API — M12.5 trace integration tests
+        run: |
+          go test -tags=integration ./examples/orders-api/bt/trace/... -race -count=1
+          go test -tags=integration ./examples/orders-api -race -count=1 -run TestProperty_CreateOrder_UsesTraceCurrencyDistribution -count=1
+
       - name: Integration tests (passing cases)
         run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --exclude schema-violation-acceptance-test
 
