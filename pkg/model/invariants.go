@@ -11,6 +11,7 @@ const (
 const (
 	InvariantNo5xx                       = "no_5xx"
 	InvariantResponseMatchesSchema       = "response_matches_schema"
+	InvariantNoGQLErrors                 = "no_gql_errors"
 	InvariantIdempotencyKeyPreventsDupes = "idempotency_key_prevents_duplicates"
 	InvariantContract                    = "contract"
 )

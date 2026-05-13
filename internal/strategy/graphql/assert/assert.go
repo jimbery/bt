@@ -107,6 +107,51 @@ func AssertResponse(body []byte, op model.Operation) []AssertionFailure {
 	return out
 }
 
+// AssertSelectionSchema validates only the GraphQL selection shape (GQLSelectionSchema)
+// against the operation payload under data.*. It does not inspect the errors array.
+func AssertSelectionSchema(body []byte, op model.Operation) []AssertionFailure {
+	var out []AssertionFailure
+	if op.GQLSelectionSchema == nil {
+		return out
+	}
+	var root any
+	if err := json.Unmarshal(body, &root); err != nil {
+		return append(out, AssertionFailure{Field: "body", Message: "invalid JSON", Severity: Critical})
+	}
+	obj, ok := root.(map[string]any)
+	if !ok {
+		return append(out, AssertionFailure{Field: "body", Message: "expected top-level JSON object", Severity: Critical})
+	}
+	if _, has := obj["data"]; !has {
+		return append(out, AssertionFailure{Field: "data", Message: `response must include a "data" key`, Severity: Critical})
+	}
+	dataVal := obj["data"]
+
+	if dataVal != nil {
+		payload := graphqlDataPayload(dataVal, op.ID)
+		if payload == nil {
+			return out
+		}
+		switch v := payload.(type) {
+		case map[string]any:
+			for _, cv := range contract.EvaluateBody(v, op.GQLSelectionSchema) {
+				out = append(out, contractViolationToFailure(cv))
+			}
+		default:
+			raw, err := json.Marshal(v)
+			if err != nil {
+				out = append(out, AssertionFailure{Field: "data", Message: err.Error(), Severity: Critical})
+				break
+			}
+			for _, cv := range contract.EvaluateJSON(raw, op.GQLSelectionSchema) {
+				out = append(out, contractViolationToFailure(cv))
+			}
+		}
+	}
+
+	return out
+}
+
 func graphqlDataPayload(dataVal any, opID string) any {
 	m, ok := dataVal.(map[string]any)
 	if !ok || opID == "" {

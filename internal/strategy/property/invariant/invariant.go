@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/jayimbery/bt/internal/gqlcase"
+	gqlinvariant "github.com/jayimbery/bt/internal/strategy/graphql/invariant"
 	"github.com/jayimbery/bt/internal/strategy/property/validate"
 	"github.com/jayimbery/bt/pkg/model"
 )
@@ -27,7 +29,15 @@ func No5xx(res model.Result) []model.Failure {
 
 // ResponseMatchesSchema validates the response body against the operation schema
 // for the response status code. Skips when no schema is defined for that status.
+// For GraphQL operations with a selection schema, validates the selection shape only.
 func ResponseMatchesSchema(op model.Operation, res model.Result) []model.Failure {
+	if gqlcase.IsGraphQLOperation(op) && op.GQLSelectionSchema != nil {
+		return gqlinvariant.EvaluateResponseMatchesSelection(op, res)
+	}
+	return responseMatchesOpenAPI(op, res)
+}
+
+func responseMatchesOpenAPI(op model.Operation, res model.Result) []model.Failure {
 	schema := schemaForStatus(op, res.Response.StatusCode)
 	if schema == nil {
 		return nil
@@ -84,7 +94,7 @@ func IdempotencyKeyPrevents(ir model.IdempotencyResult) []model.Failure {
 }
 
 // PropertyEval evaluates invariants that need operation context.
-type PropertyEval func(op model.Operation, res model.Result, idem *model.IdempotencyResult) []model.Failure
+type PropertyEval func(inv model.Invariant, op model.Operation, res model.Result, idem *model.IdempotencyResult) []model.Failure
 
 // Lookup returns a registered property invariant by config name.
 func Lookup(name string) (PropertyEval, bool) {
@@ -93,13 +103,18 @@ func Lookup(name string) (PropertyEval, bool) {
 }
 
 var registry = map[string]PropertyEval{
-	model.InvariantNo5xx: func(op model.Operation, res model.Result, _ *model.IdempotencyResult) []model.Failure {
+	model.InvariantNo5xx: func(_ model.Invariant, op model.Operation, res model.Result, _ *model.IdempotencyResult) []model.Failure {
+		_ = op
 		return No5xx(res)
 	},
-	model.InvariantResponseMatchesSchema: func(op model.Operation, res model.Result, _ *model.IdempotencyResult) []model.Failure {
+	model.InvariantResponseMatchesSchema: func(_ model.Invariant, op model.Operation, res model.Result, _ *model.IdempotencyResult) []model.Failure {
 		return ResponseMatchesSchema(op, res)
 	},
-	model.InvariantIdempotencyKeyPreventsDupes: func(_ model.Operation, _ model.Result, idem *model.IdempotencyResult) []model.Failure {
+	model.InvariantNoGQLErrors: func(inv model.Invariant, op model.Operation, res model.Result, _ *model.IdempotencyResult) []model.Failure {
+		cfg := gqlinvariant.NoGQLErrorsConfigFromInvariant(inv)
+		return gqlinvariant.EvaluateNoGQLErrors(cfg, op, res)
+	},
+	model.InvariantIdempotencyKeyPreventsDupes: func(_ model.Invariant, _ model.Operation, _ model.Result, idem *model.IdempotencyResult) []model.Failure {
 		if idem == nil {
 			return nil
 		}

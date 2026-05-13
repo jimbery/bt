@@ -28,4 +28,7 @@ func TestLookup(t *testing.T) {
 	if _, ok := invariant.Lookup(model.InvariantResponseMatchesSchema); !ok {
 		t.Fatal("missing response_matches_schema")
 	}
+	if _, ok := invariant.Lookup(model.InvariantNoGQLErrors); !ok {
+		t.Fatal("missing no_gql_errors")
+	}
 }

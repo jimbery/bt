@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	graphqladapt "github.com/jayimbery/bt/internal/adapter/graphql"
 	"github.com/jayimbery/bt/internal/adapter/openapi"
 	"github.com/jayimbery/bt/internal/ai"
 	"github.com/jayimbery/bt/internal/ai/parse"
@@ -49,8 +50,7 @@ func SuggestInvariantsHandler(p ai.Provider) registry.HandlerFunc {
 			abs = in.SchemaPath
 		}
 
-		ad := openapi.New()
-		ops, discErr := ad.Discover(ctx, model.Target{SchemaPath: abs})
+		ops, discErr := discoverOperationsForSuggest(ctx, abs)
 		if discErr != nil {
 			out, _ := json.Marshal(map[string]any{
 				"error": discErr.Error(),
@@ -83,7 +83,7 @@ func SuggestInvariantsHandler(p ai.Provider) registry.HandlerFunc {
 			b, err := json.Marshal(map[string]any{
 				"operation_id": in.OperationID,
 				"provider":     label,
-				"suggestions":  fb,
+				"suggestions":  mergeGraphQLInvariantPrefix(op, fb),
 			})
 			return json.RawMessage(b), err
 		}
@@ -94,10 +94,11 @@ func SuggestInvariantsHandler(p ai.Provider) registry.HandlerFunc {
 			b, err := json.Marshal(map[string]any{
 				"operation_id": in.OperationID,
 				"provider":     label,
-				"suggestions":  fb,
+				"suggestions":  mergeGraphQLInvariantPrefix(op, fb),
 			})
 			return json.RawMessage(b), err
 		}
+		suggestions = mergeGraphQLInvariantPrefix(op, suggestions)
 		b, err := json.Marshal(map[string]any{
 			"operation_id": in.OperationID,
 			"provider":     label,
@@ -105,4 +106,44 @@ func SuggestInvariantsHandler(p ai.Provider) registry.HandlerFunc {
 		})
 		return json.RawMessage(b), err
 	}
+}
+
+func discoverOperationsForSuggest(ctx context.Context, schemaPath string) ([]model.Operation, error) {
+	p := strings.ToLower(schemaPath)
+	if strings.HasSuffix(p, ".graphql") || strings.HasSuffix(p, ".gql") {
+		return graphqladapt.New().Discover(ctx, model.Target{SchemaPath: schemaPath})
+	}
+	return openapi.New().Discover(ctx, model.Target{SchemaPath: schemaPath})
+}
+
+func mergeGraphQLInvariantPrefix(op *model.Operation, base []parse.InvariantSuggestion) []parse.InvariantSuggestion {
+	if op == nil || (op.GQLKind != model.GQLQuery && op.GQLKind != model.GQLMutation) {
+		return base
+	}
+	prefix := []parse.InvariantSuggestion{
+		{
+			Name:          model.InvariantNoGQLErrors,
+			Rationale:     "Fails if 'errors' is present and non-empty. Severity is configurable: Critical (default) or Warning.",
+			Confidence:    "high",
+			InvariantType: "no_gql_errors",
+		},
+		{
+			Name:          model.InvariantResponseMatchesSchema,
+			Rationale:     "Validates data.* fields against the SDL-derived selection schema for this operation.",
+			Confidence:    "high",
+			InvariantType: "response_matches_schema",
+		},
+	}
+	seen := make(map[string]struct{}, len(prefix))
+	for _, s := range prefix {
+		seen[s.Name] = struct{}{}
+	}
+	var tail []parse.InvariantSuggestion
+	for _, s := range base {
+		if _, dup := seen[s.Name]; dup {
+			continue
+		}
+		tail = append(tail, s)
+	}
+	return append(prefix, tail...)
 }
