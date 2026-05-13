@@ -1,0 +1,24 @@
+# Stateful strategy: trace-generated flows only (requires
+# examples/orders-api/bt/.bt/trace/profile.json — run `bt trace import` first).
+version: 1
+
+baseline: baseline.yaml
+
+target:
+  name: orders-api
+  base_url: http://localhost:8080
+  schema: examples/orders-api/spec/openapi.yaml
+
+strategies:
+  - type: stateful
+    config:
+      trace_flow_count: 5
+      trace_max_steps: 3
+
+report:
+  formats: [console, json, junit]
+  output_dir: examples/orders-api/bt/.bt/reports
+
+safety:
+  profile: safe
+  deny_methods: []

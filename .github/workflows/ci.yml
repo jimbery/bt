@@ -54,6 +54,9 @@ jobs:
       - name: GraphQL — bt table
         run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --exclude gql-schema-violation-acceptance-test
 
+      - name: GraphQL — bt stateful (hand-authored flows)
+        run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy stateful --adapter graphql
+
       - name: GraphQL — bt JSON
         run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --exclude gql-schema-violation-acceptance-test --output json
 
@@ -193,6 +196,17 @@ jobs:
         run: |
           go test -tags=integration ./examples/orders-api/bt/trace/... -race -count=1
           go test -tags=integration ./examples/orders-api -race -count=1 -run TestProperty_CreateOrder_UsesTraceCurrencyDistribution -count=1
+
+      - name: Orders API — stateful strategy (hand-authored flows)
+        run: |
+          mkdir -p examples/orders-api/bt/.bt/artifacts
+          ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy stateful
+
+      - name: Orders API — stateful strategy (trace-generated flows)
+        run: ./bt run --config examples/orders-api/bt/backendtest-stateful-trace.yaml --strategy stateful
+
+      - name: Orders API — M13.5 stateful flow integration tests
+        run: go test -tags=integration ./examples/orders-api -race -count=1 -run 'Test(Flow_CreateAndRetrieve_Passes|Flow_CreateAndUpdate_Passes|Flow_CreateAndCancel_Passes|BrokenFlow_|Replay_|TraceGeneratedFlow_)' -v
 
       - name: Integration tests (passing cases)
         run: ./bt run --config examples/orders-api/bt/backendtest.yaml --strategy table --exclude schema-violation-acceptance-test

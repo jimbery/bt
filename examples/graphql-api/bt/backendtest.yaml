@@ -10,6 +10,10 @@ strategies:
   - type: table
     file: examples/graphql-api/bt/tests/table.yaml
 
+  - type: stateful
+    config:
+      flows_dir: flows
+
 report:
   formats: [console, json, junit]
   output_dir: examples/graphql-api/bt/.bt/reports

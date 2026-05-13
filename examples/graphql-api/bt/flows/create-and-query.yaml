@@ -1,0 +1,67 @@
+flows:
+  - id: gql-create-and-query-order
+    description: "Create an order via mutation then query it — verifies GQL binding propagation"
+    steps:
+      - id: create
+        operation_id: createOrder
+        input:
+          method: POST
+          path: /graphql
+          headers:
+            Content-Type: application/json
+          body:
+            query: "mutation CreateOrder($input: CreateOrderInput!) { createOrder(input: $input) { id status amount } }"
+            variables:
+              input:
+                amount: 100
+                currency: GBP
+        expected:
+          status_code: 200
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [createOrder]
+                properties:
+                  createOrder:
+                    type: object
+                    required: [id, status, amount]
+                    properties:
+                      id: { type: string }
+                      status: { type: string, enum: [PENDING] }
+                      amount: { type: integer }
+        extract:
+          order_id:
+            from: "$.data.createOrder.id"
+            into: path
+
+      - id: query
+        operation_id: order
+        input:
+          method: POST
+          path: /graphql
+          headers:
+            Content-Type: application/json
+          body:
+            query: "query GetOrder($id: ID!) { order(id: $id) { id amount status } }"
+            variables:
+              id: "{order_id}"
+        expected:
+          status_code: 200
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data:
+                type: object
+                required: [order]
+                properties:
+                  order:
+                    type: object
+                    required: [id, amount, status]
+                    properties:
+                      id: { type: string }
+                      amount: { type: integer }
+                      status: { type: string }
