@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -54,6 +55,8 @@ type ArtifactWriter interface {
 type Options struct {
 	ArtifactWriter ArtifactWriter
 	Environment    string
+	// TraceProfile, when set, steers REST JSON body generation for object request bodies (M12).
+	TraceProfile *model.TraceProfile
 }
 
 type propertyStrategy struct {
@@ -134,7 +137,7 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 			rt.Errorf("cancelled: %v", err)
 			return
 		}
-		input := buildCaseInput(rt, op, c, s.invariants)
+		input := s.buildCaseInput(rt, op, c, s.invariants)
 		resp, err := exec.Run(ctx, input)
 		if err != nil {
 			rt.Errorf("request failed: %v", err)
@@ -271,7 +274,61 @@ func wantsInvariantName(invs []model.Invariant, name string) bool {
 	return false
 }
 
-func buildCaseInput(t *rapid.T, op model.Operation, c model.Case, invs []model.Invariant) model.CaseInput {
+func (s *propertyStrategy) operationProfile(op model.Operation) *model.OperationProfile {
+	if s.opts.TraceProfile == nil || s.opts.TraceProfile.Operations == nil {
+		return nil
+	}
+	return s.opts.TraceProfile.Operations[op.ID]
+}
+
+func sortedPropertyNames(schema *model.SchemaRef) []string {
+	if schema == nil || len(schema.Properties) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(schema.Properties))
+	for k := range schema.Properties {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// restJSONObjectWithTrace builds a JSON object map from an OpenAPI object schema, using trace
+// argument profiles per top-level property when present.
+func restJSONObjectWithTrace(t *rapid.T, body *model.SchemaRef, opProf *model.OperationProfile) any {
+	if body == nil {
+		return nil
+	}
+	if body.Type != "object" || len(body.Properties) == 0 {
+		return gen.GenForSchema(body).Draw(t, "json_body")
+	}
+	req := make(map[string]struct{}, len(body.Required))
+	for _, k := range body.Required {
+		req[k] = struct{}{}
+	}
+	out := make(map[string]any, len(body.Properties))
+	for _, name := range sortedPropertyNames(body) {
+		prop := body.Properties[name]
+		if prop == nil {
+			continue
+		}
+		var ap *model.ArgumentProfile
+		if opProf != nil && opProf.Arguments != nil {
+			ap = opProf.Arguments[name]
+		}
+		g := gen.NewComposedGenerator(prop, ap)
+		if _, required := req[name]; required {
+			out[name] = g.Draw(t, name)
+			continue
+		}
+		if rapid.Bool().Draw(t, "opt_"+name) {
+			out[name] = g.Draw(t, name)
+		}
+	}
+	return out
+}
+
+func (s *propertyStrategy) buildCaseInput(t *rapid.T, op model.Operation, c model.Case, invs []model.Invariant) model.CaseInput {
 	if gqlcase.IsGraphQLOperation(op) {
 		in := model.CaseInput{
 			Method:   op.Method,
@@ -295,8 +352,8 @@ func buildCaseInput(t *rapid.T, op model.Operation, c model.Case, invs []model.I
 
 	in := c.Input
 	if wantsRequestBody(op.Method) && op.RequestBody != nil {
-		g := gen.GenForSchema(op.RequestBody)
-		in.Body = g.Draw(t, "json_body")
+		opProf := s.operationProfile(op)
+		in.Body = restJSONObjectWithTrace(t, op.RequestBody, opProf)
 	}
 	if wantsInvariantName(invs, model.InvariantIdempotencyKeyPreventsDupes) {
 		if in.Headers == nil {

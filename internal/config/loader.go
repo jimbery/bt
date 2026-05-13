@@ -20,6 +20,7 @@ type Config struct {
 	Strategies []StrategyConfig `mapstructure:"strategies"`
 	Report     ReportConfig     `mapstructure:"report"`
 	Safety     SafetyConfig     `mapstructure:"safety"`
+	Trace      TraceConfig      `mapstructure:"trace"`
 	// Baseline is optional path to baseline YAML (quarantined contract failures). Relative paths resolve from the config file directory.
 	Baseline string `mapstructure:"baseline"`
 }
@@ -59,6 +60,12 @@ type SafetyConfig struct {
 	MaxRequestsPerSecond float64  `mapstructure:"max_requests_per_second"`
 	MaxConcurrency       int      `mapstructure:"max_concurrency"`
 	TimeoutSeconds       float64  `mapstructure:"timeout_seconds"`
+}
+
+// TraceConfig holds optional trace-profile paths (M12).
+type TraceConfig struct {
+	// Profile is a path to trace profile JSON (schema_version "1"). Relative paths resolve from the config file directory.
+	Profile string `mapstructure:"profile"`
 }
 
 func Load(path string) (*Config, error) {

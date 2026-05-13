@@ -2,9 +2,11 @@
 package runplan
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -68,6 +70,15 @@ func BuildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, opt 
 		}
 	}
 
+	var traceProf *model.TraceProfile
+	if strategy.Kind(strategyName) == strategy.KindProperty {
+		var err error
+		traceProf, err = loadTraceProfileForProperty(cfgPath, cfg)
+		if err != nil {
+			return nil, strategy.Spec{}, err
+		}
+	}
+
 	switch strategy.Kind(strategyName) {
 	case strategy.KindTable:
 		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
@@ -83,6 +94,7 @@ func BuildStrategyAndSpec(cfgPath, strategyName string, cfg *config.Config, opt 
 		st = property.NewWithOptions(property.Options{
 			ArtifactWriter: replay.NewWriter(artifactDir),
 			Environment:    cfg.Target.Environment,
+			TraceProfile:   traceProf,
 		})
 	case strategy.KindFuzz:
 		artifactDir := filepath.Join(filepath.Dir(cfgPath), ".bt", "artifacts")
@@ -189,4 +201,38 @@ func validateFuzzSafetyProfileName(p string) error {
 	default:
 		return fmt.Errorf("fuzz: unknown safety profile %q (want safe, aggressive, or destructive)", p)
 	}
+}
+
+func loadTraceProfileForProperty(cfgPath string, cfg *config.Config) (*model.TraceProfile, error) {
+	path := ResolveTraceProfilePath(cfgPath, cfg)
+	explicit := strings.TrimSpace(cfg.Trace.Profile)
+	if explicit != "" {
+		return model.ParseProfile(path)
+	}
+	st, err := os.Stat(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("trace profile path %q: %w", path, err)
+	}
+	if st.IsDir() {
+		return nil, nil
+	}
+	return model.ParseProfile(path)
+}
+
+// ResolveTraceProfilePath returns the trace profile JSON path for import and property loading.
+// Relative cfg.Trace.Profile values resolve against the config file directory.
+// When trace.profile is empty, the default is <config-dir>/.bt/trace/profile.json.
+func ResolveTraceProfilePath(cfgPath string, cfg *config.Config) string {
+	explicit := strings.TrimSpace(cfg.Trace.Profile)
+	dir := filepath.Dir(cfgPath)
+	if explicit != "" {
+		if filepath.IsAbs(explicit) {
+			return explicit
+		}
+		return filepath.Join(dir, explicit)
+	}
+	return filepath.Join(dir, ".bt", "trace", "profile.json")
 }
