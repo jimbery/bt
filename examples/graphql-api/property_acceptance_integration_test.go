@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"runtime"
+	"strings"
 	"testing"
 
 	graphqladapt "github.com/jayimbery/bt/internal/adapter/graphql"
@@ -17,33 +17,13 @@ import (
 	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
 	"github.com/jayimbery/bt/internal/strategy"
 	"github.com/jayimbery/bt/internal/strategy/property"
+	"github.com/jayimbery/bt/internal/testutil"
 	"github.com/jayimbery/bt/pkg/model"
 )
 
-func testRepoRootM115(t *testing.T) string {
+func discoveredGraphQLOps(t *testing.T) []model.Operation {
 	t.Helper()
-	_, file, _, ok := runtime.Caller(1)
-	if !ok {
-		t.Fatal("runtime.Caller failed")
-	}
-	dir := filepath.Dir(file)
-	for i := 0; i < 16; i++ {
-		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
-			return dir
-		}
-		next := filepath.Dir(dir)
-		if next == dir {
-			break
-		}
-		dir = next
-	}
-	t.Fatal("go.mod not found")
-	panic("unreachable")
-}
-
-func discoveredGraphQLOpsM115(t *testing.T) []model.Operation {
-	t.Helper()
-	schemaPath := filepath.Join(testRepoRootM115(t), "examples/graphql-api/schema.graphql")
+	schemaPath := filepath.Join(testutil.RepoRoot(t), "examples/graphql-api/schema.graphql")
 	ops, err := graphqladapt.New().Discover(context.Background(), model.Target{SchemaPath: schemaPath})
 	if err != nil {
 		t.Fatalf("discover: %v", err)
@@ -51,7 +31,7 @@ func discoveredGraphQLOpsM115(t *testing.T) []model.Operation {
 	return ops
 }
 
-func pickOpM115(t *testing.T, ops []model.Operation, id string) model.Operation {
+func pickOp(t *testing.T, ops []model.Operation, id string) model.Operation {
 	t.Helper()
 	for i := range ops {
 		if ops[i].ID == id {
@@ -62,24 +42,24 @@ func pickOpM115(t *testing.T, ops []model.Operation, id string) model.Operation 
 	panic("unreachable")
 }
 
-func newGQLTestServerM115(t *testing.T) *httptest.Server {
+func newGQLTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(NewHandler())
 }
 
-func newBuggyGQLTestServerM115(t *testing.T) *httptest.Server {
+func newBuggyGQLTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	t.Setenv("BT_GQL_AMOUNT_BUG", "1")
 	return httptest.NewServer(NewHandler())
 }
 
 func TestPropertyRun_ValidServer_AllPassWithin100Checks(t *testing.T) {
-	srv := newGQLTestServerM115(t)
+	srv := newGQLTestServer(t)
 	defer srv.Close()
 
-	ops := discoveredGraphQLOpsM115(t)
-	createOp := pickOpM115(t, ops, "createOrder")
-	orderOp := pickOpM115(t, ops, "order")
+	ops := discoveredGraphQLOps(t)
+	createOp := pickOp(t, ops, "createOrder")
+	orderOp := pickOp(t, ops, "order")
 	selected := []model.Operation{createOp, orderOp}
 
 	httpExec := runner.New(runner.Config{BaseURL: srv.URL})
@@ -114,11 +94,11 @@ func TestPropertyRun_ValidServer_AllPassWithin100Checks(t *testing.T) {
 }
 
 func TestPropertyRun_BrokenResolver_DetectedWithin50Checks(t *testing.T) {
-	srv := newBuggyGQLTestServerM115(t)
+	srv := newBuggyGQLTestServer(t)
 	defer srv.Close()
 
-	ops := discoveredGraphQLOpsM115(t)
-	createOp := pickOpM115(t, ops, "createOrder")
+	ops := discoveredGraphQLOps(t)
+	createOp := pickOp(t, ops, "createOrder")
 
 	httpExec := runner.New(runner.Config{BaseURL: srv.URL})
 	gqlExec := gqlrunner.New(gqlrunner.Config{BaseURL: srv.URL})
@@ -156,7 +136,7 @@ func TestPropertyRun_BrokenResolver_DetectedWithin50Checks(t *testing.T) {
 		if !r.Passed {
 			mentionsAmount := false
 			for _, f := range r.Failures {
-				if containsSubstringM115(f.Path, "amount") || containsSubstringM115(f.Message, "amount") {
+				if strings.Contains(f.Path, "amount") || strings.Contains(f.Message, "amount") {
 					mentionsAmount = true
 					break
 				}
@@ -169,12 +149,12 @@ func TestPropertyRun_BrokenResolver_DetectedWithin50Checks(t *testing.T) {
 }
 
 func TestPropertyRun_ArtifactBundle_ContainsGQLFields(t *testing.T) {
-	srv := newBuggyGQLTestServerM115(t)
+	srv := newBuggyGQLTestServer(t)
 	defer srv.Close()
 
 	artifactDir := filepath.Join(t.TempDir(), "artifacts")
-	ops := discoveredGraphQLOpsM115(t)
-	createOp := pickOpM115(t, ops, "createOrder")
+	ops := discoveredGraphQLOps(t)
+	createOp := pickOp(t, ops, "createOrder")
 
 	httpExec := runner.New(runner.Config{BaseURL: srv.URL})
 	gqlExec := gqlrunner.New(gqlrunner.Config{BaseURL: srv.URL})
@@ -203,10 +183,10 @@ func TestPropertyRun_ArtifactBundle_ContainsGQLFields(t *testing.T) {
 				t.Fatalf("parse artifact JSON: %v", err)
 			}
 			if bundle["gql_operation_kind"] == nil {
-				t.Errorf("artifact missing 'gql_operation_kind'; keys: %v", mapKeysM115(bundle))
+				t.Errorf("artifact missing 'gql_operation_kind'; keys: %v", testutil.SortedStringKeys(bundle))
 			}
 			if bundle["gql_variables"] == nil {
-				t.Errorf("artifact missing 'gql_variables'; keys: %v", mapKeysM115(bundle))
+				t.Errorf("artifact missing 'gql_variables'; keys: %v", testutil.SortedStringKeys(bundle))
 			}
 			if bundle["strategy_kind"] != "property" {
 				t.Errorf("expected strategy_kind 'property', got: %v", bundle["strategy_kind"])
@@ -226,15 +206,15 @@ func TestPropertyRun_ArtifactBundle_ContainsGQLFields(t *testing.T) {
 }
 
 func TestPropertyRun_SeedReplay_ArtifactReproducible(t *testing.T) {
-	srv := newBuggyGQLTestServerM115(t)
+	srv := newBuggyGQLTestServer(t)
 	defer srv.Close()
 
 	dir := filepath.Join(t.TempDir(), "artifacts")
 	seed := int64(99)
 
 	runWithSeed := func() []model.Result {
-		ops := discoveredGraphQLOpsM115(t)
-		createOp := pickOpM115(t, ops, "createOrder")
+		ops := discoveredGraphQLOps(t)
+		createOp := pickOp(t, ops, "createOrder")
 		httpExec := runner.New(runner.Config{BaseURL: srv.URL})
 		gqlExec := gqlrunner.New(gqlrunner.Config{BaseURL: srv.URL})
 		exec := runner.NewGQLRESTExecutor(httpExec, gqlExec)
@@ -275,33 +255,10 @@ func TestPropertyRun_SeedReplay_ArtifactReproducible(t *testing.T) {
 				t.Fatalf("parse: %v", err)
 			}
 			if bundle["seed"] == nil {
-				t.Errorf("artifact missing 'seed' field; keys: %v", mapKeysM115(bundle))
+				t.Errorf("artifact missing 'seed' field; keys: %v", testutil.SortedStringKeys(bundle))
 			}
 			return
 		}
 	}
 	t.Fatal("expected a failing artifact with seed")
-}
-
-func containsSubstringM115(s, sub string) bool {
-	if sub == "" {
-		return true
-	}
-	if s == "" {
-		return false
-	}
-	for i := 0; i+len(sub) <= len(s); i++ {
-		if s[i:i+len(sub)] == sub {
-			return true
-		}
-	}
-	return false
-}
-
-func mapKeysM115(m map[string]any) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
 }

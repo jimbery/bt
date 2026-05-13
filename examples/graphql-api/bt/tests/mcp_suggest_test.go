@@ -11,11 +11,12 @@ import (
 
 	"github.com/jayimbery/bt/internal/ai"
 	"github.com/jayimbery/bt/internal/mcp/tools"
+	"github.com/jayimbery/bt/internal/testutil"
 	"github.com/jayimbery/bt/pkg/model"
 )
 
 func TestMCPSuggestInvariants_GraphQLQuery_ReturnsGQLSuggestionsFirst(t *testing.T) {
-	root := testRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/graphql-api/schema.graphql")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(`[{"name":"no_5xx","rationale":"x","confidence":"high","invariant_type":"no_5xx"}]`))
 	raw, err := h(context.Background(), mustJSON(t, map[string]string{
@@ -78,7 +79,7 @@ func TestMCPSuggestInvariants_GraphQLQuery_ReturnsGQLSuggestionsFirst(t *testing
 }
 
 func TestMCPSuggestInvariants_GraphQLMutation_ReturnsGQLSuggestionsFirst(t *testing.T) {
-	root := testRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/graphql-api/schema.graphql")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(`[{"name":"no_5xx","rationale":"x","confidence":"high","invariant_type":"no_5xx"}]`))
 	raw, err := h(context.Background(), mustJSON(t, map[string]string{
@@ -103,7 +104,7 @@ func TestMCPSuggestInvariants_GraphQLMutation_ReturnsGQLSuggestionsFirst(t *test
 }
 
 func TestMCPSuggestInvariants_Subscription_NoPropertyGQLInvariants(t *testing.T) {
-	root := testRepoRoot(t)
+	root := testutil.RepoRoot(t)
 	schema := filepath.Join(root, "examples/graphql-api/bt/tests/testdata/schema_subscription.graphql")
 	h := tools.SuggestInvariantsHandler(ai.NewStubProvider(`[{"name":"no_5xx","rationale":"x","confidence":"high","invariant_type":"no_5xx"}]`))
 	raw, err := h(context.Background(), mustJSON(t, map[string]string{
