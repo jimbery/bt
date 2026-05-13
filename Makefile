@@ -56,6 +56,8 @@ run-integration-local: bt orders-api
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy property; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy fuzz --safety safe --fuzz-iterations 20; \
 	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy contract; \
+	./bt run --config examples/orders-api/bt/backendtest.yaml --strategy stateful; \
+	go test ./examples/orders-api -tags integration -race -count=1 -run 'Test(Flow_CreateAndRetrieve_Passes|Flow_CreateAndUpdate_Passes|Flow_CreateAndCancel_Passes|BrokenFlow_|Replay_|TraceGeneratedFlow_)'; \
 	go test ./examples/orders-api/integration/... -tags integration -race -count=1; \
 	go test ./examples/orders-api -tags integration -race -count=1 -run TestSchemaViolationAcceptance; \
 	go test ./examples/graphql-api -tags integration -race -count=1 -run TestGQLSchemaViolationAcceptance

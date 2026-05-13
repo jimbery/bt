@@ -264,6 +264,35 @@ func TestInject_Body_ReplacesEntireBody(t *testing.T) {
 	}
 }
 
+func TestInject_Body_JSON_ReplacesBracePlaceholders(t *testing.T) {
+	step := &model.FlowStep{
+		Input: model.StepInput{
+			Method: "POST",
+			Path:   "/graphql",
+			Body: map[string]any{
+				"query": "query Q($id: ID!) { order(id: $id) { id } }",
+				"variables": map[string]any{
+					"id": "{order_id}",
+				},
+			},
+		},
+	}
+	bindings := map[string]any{"order_id": "ord_graph_1"}
+	resolved, err := binding.Inject(step, bindings)
+	if err != nil {
+		t.Fatalf("Inject: %v", err)
+	}
+	if resolved.Body == nil {
+		t.Fatal("expected body")
+	}
+	if strings.Contains(string(resolved.Body), "{order_id}") {
+		t.Errorf("placeholder should be replaced, got %s", resolved.Body)
+	}
+	if !strings.Contains(string(resolved.Body), "ord_graph_1") {
+		t.Errorf("expected bound id in JSON body, got %s", resolved.Body)
+	}
+}
+
 func TestValidateExpression_ValidJSONPath_NoError(t *testing.T) {
 	validExprs := []string{"$.id", "$.items[0].sku", "$.data.order.id", "$"}
 	for _, expr := range validExprs {

@@ -1,0 +1,47 @@
+flows:
+  - id: create-and-retrieve-order
+    description: "Create an order then retrieve it by the returned ID — verifies binding propagation"
+    steps:
+      - id: create
+        operation_id: CreateOrder
+        input:
+          method: POST
+          path: /orders
+          headers:
+            Content-Type: application/json
+          body:
+            amount: 100
+            currency: GBP
+            description: Flow test order
+        expected:
+          status_code: 201
+          schema:
+            type: object
+            required: [id, amount, currency, status, created_at]
+            properties:
+              id: { type: string }
+              amount: { type: integer }
+              currency: { type: string }
+              status: { type: string, enum: [pending] }
+              created_at: { type: string }
+        extract:
+          order_id:
+            from: "$.id"
+            into: path
+
+      - id: retrieve
+        operation_id: GetOrder
+        input:
+          method: GET
+          path: "/orders/{order_id}"
+        expected:
+          status_code: 200
+          schema:
+            type: object
+            required: [id, amount, currency, status, created_at]
+            properties:
+              id: { type: string }
+              amount: { type: integer }
+              currency: { type: string }
+              status: { type: string }
+              created_at: { type: string }

@@ -185,7 +185,34 @@ func Inject(step *model.FlowStep, bindings map[string]any) (*ResolvedInput, erro
 			out.Body = raw
 		}
 	}
+	if len(out.Body) > 0 && len(bindings) > 0 {
+		b, err := replaceBodyPlaceholders(out.Body, bindings)
+		if err != nil {
+			return nil, err
+		}
+		out.Body = b
+	}
 	return out, nil
+}
+
+// replaceBodyPlaceholders substitutes "{key}" substrings in JSON (e.g. GraphQL variables) from bindings.
+func replaceBodyPlaceholders(body []byte, bindings map[string]any) ([]byte, error) {
+	if len(body) == 0 || len(bindings) == 0 {
+		return body, nil
+	}
+	s := string(body)
+	for key, val := range bindings {
+		ph := "{" + key + "}"
+		if !strings.Contains(s, ph) {
+			continue
+		}
+		sv, err := stringifyPathValue(val)
+		if err != nil {
+			return nil, fmt.Errorf("binding %q: %w", key, err)
+		}
+		s = strings.ReplaceAll(s, ph, sv)
+	}
+	return []byte(s), nil
 }
 
 func stringifyPathValue(v any) (string, error) {

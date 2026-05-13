@@ -1,0 +1,44 @@
+flows:
+  - id: create-and-update-order
+    description: "Create an order and update its status to confirmed"
+    steps:
+      - id: create
+        operation_id: CreateOrder
+        input:
+          method: POST
+          path: /orders
+          headers:
+            Content-Type: application/json
+          body:
+            amount: 50
+            currency: USD
+        expected:
+          status_code: 201
+          schema:
+            type: object
+            required: [id, status]
+            properties:
+              id: { type: string }
+              status: { type: string, enum: [pending] }
+        extract:
+          order_id:
+            from: "$.id"
+            into: path
+
+      - id: update
+        operation_id: UpdateOrder
+        input:
+          method: PATCH
+          path: "/orders/{order_id}"
+          headers:
+            Content-Type: application/json
+          body:
+            status: confirmed
+        expected:
+          status_code: 200
+          schema:
+            type: object
+            required: [id, status]
+            properties:
+              id: { type: string }
+              status: { type: string, enum: [confirmed] }
