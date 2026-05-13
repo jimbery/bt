@@ -164,6 +164,9 @@ func buildSchema() (graphql.Schema, error) {
 					if f, ok := in["amount"].(float64); ok {
 						amt = int(f)
 					}
+					if amt < 0 {
+						return nil, fmt.Errorf("amount must be non-negative")
+					}
 					cur, _ := in["currency"].(string)
 					var desc *string
 					if d, ok := in["description"].(string); ok && d != "" {

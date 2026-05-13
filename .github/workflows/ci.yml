@@ -49,7 +49,7 @@ jobs:
           exit 1
 
       - name: Ensure graphql-api bt report directory
-        run: mkdir -p examples/graphql-api/bt/.bt/reports
+        run: mkdir -p examples/graphql-api/bt/.bt/reports examples/graphql-api/bt/.bt/artifacts
 
       - name: GraphQL — bt table
         run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --exclude gql-schema-violation-acceptance-test
@@ -61,24 +61,88 @@ jobs:
         if: always()
         run: ./bt run --config examples/graphql-api/bt/backendtest.yaml --strategy table --exclude gql-schema-violation-acceptance-test --output junit
 
+      - name: GraphQL — M11.5 server property shapes (httptest)
+        run: |
+          go test ./examples/graphql-api/... -race -count=1 -run 'TestCreateOrder_PropertyShape|TestOrderQuery_PropertyShape' -v
+          BT_GQL_AMOUNT_BUG=1 go test ./examples/graphql-api/... -race -count=1 -run TestOrderQuery_BrokenResolver -v
+
+      - name: GraphQL — validate property configs
+        run: |
+          ./bt validate --config examples/graphql-api/bt/backendtest-property.yaml --output json
+          ./bt validate --config examples/graphql-api/bt/backendtest-property-bug.yaml --output json
+
+      - name: GraphQL — property strategy (healthy server)
+        run: ./bt run --config examples/graphql-api/bt/backendtest-property.yaml --strategy property --adapter graphql
+
+      - name: GraphQL — M11.5 integration (property + MCP)
+        run: |
+          go test -tags=integration ./examples/graphql-api/bt/tests/... -race -count=1 -v
+          go test -tags=integration ./examples/graphql-api -race -count=1 -run TestPropertyRun -v
+
       - name: GraphQL — Go integration tests
         run: go test -tags=integration ./examples/graphql-api/integration/... -race -count=1
 
       - name: GraphQL — schema violation acceptance (httptest)
         run: go test -tags=integration ./examples/graphql-api -race -count=1 -run TestGQLSchemaViolationAcceptance -v
 
-      - name: GraphQL — amount bug detection
+      - name: GraphQL — amount bug detection + property on buggy server + replay
         run: |
+          set -e
+          mkdir -p examples/graphql-api/bt/.bt/artifacts
           BT_GQL_AMOUNT_BUG=1 ./graphql-api --port 8091 &
+          echo $! > /tmp/graphql-api-8091.pid
           sleep 1
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:8091/health; then break; fi
+            sleep 0.2
+          done
+          curl -sf http://localhost:8091/health >/dev/null
           GRAPHQL_BT_CONFIG=examples/graphql-api/bt/backendtest-bug.yaml BT_GQL_AMOUNT_BUG=1 go test ./examples/graphql-api/integration/... -tags=integration -run TestGraphQLRun_AmountBugDetected -count=1 -v
+          set +e
+          ./bt run --config examples/graphql-api/bt/backendtest-property-bug.yaml --strategy property --adapter graphql --checks 50 --output json > gql-property-bug.json
+          bt_exit=$?
+          set -e
+          if [ "$bt_exit" -eq 0 ]; then
+            echo "ERROR: property run should have failed on buggy server"
+            exit 1
+          fi
+          if ! grep -q amount gql-property-bug.json; then
+            echo "ERROR: expected 'amount' in property JSON output"
+            cat gql-property-bug.json
+            exit 1
+          fi
+          ARTIFACT=$(ls examples/graphql-api/bt/.bt/artifacts/*.json 2>/dev/null | head -1)
+          if [ -z "$ARTIFACT" ]; then
+            echo "ERROR: expected a property failure artifact under examples/graphql-api/bt/.bt/artifacts"
+            exit 1
+          fi
+          if ! grep -q '"seed"' "$ARTIFACT"; then
+            echo "ERROR: artifact missing seed"
+            cat "$ARTIFACT"
+            exit 1
+          fi
+          kill "$(cat /tmp/graphql-api-8091.pid)" 2>/dev/null || true
+          sleep 0.5
+          ./graphql-api --port 8091 &
+          echo $! > /tmp/graphql-api-8091.pid
+          sleep 1
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:8091/health; then break; fi
+            sleep 0.2
+          done
+          curl -sf http://localhost:8091/health >/dev/null
+          ./bt replay --config examples/graphql-api/bt/backendtest-property-bug.yaml "$ARTIFACT"
+          kill "$(cat /tmp/graphql-api-8091.pid)" 2>/dev/null || true
 
       - name: Upload GraphQL bt reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: graphql-test-results
-          path: examples/graphql-api/bt/.bt/reports/
+          path: |
+            examples/graphql-api/bt/.bt/reports/
+            examples/graphql-api/bt/.bt/artifacts/
+            gql-property-bug.json
           retention-days: 7
 
       - name: MCP stdio test client

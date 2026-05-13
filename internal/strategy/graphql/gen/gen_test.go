@@ -111,7 +111,7 @@ func TestGenForType_String_ProducesString(t *testing.T) {
 	})
 }
 
-func TestGenForType_Integer_ProducesInt32Range(t *testing.T) {
+func TestGenForType_Integer_ProducesNonNegativeInt32(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		g := gqlgen.GenForType(ptr(model.SchemaRef{Type: "integer", Nullable: false}))
 		val := g.Draw(t, "v")
@@ -120,14 +120,16 @@ func TestGenForType_Integer_ProducesInt32Range(t *testing.T) {
 		}
 		switch v := val.(type) {
 		case int32:
-			_ = v
+			if v < 0 {
+				t.Fatalf("expected non-negative int32, got %d", v)
+			}
 		case int64:
-			if v < -2147483648 || v > 2147483647 {
-				t.Fatalf("integer value %d out of int32 range", v)
+			if v < 0 || v > 2147483647 {
+				t.Fatalf("integer value %d out of expected non-negative int32 range", v)
 			}
 		case int:
-			if int64(v) < -2147483648 || int64(v) > 2147483647 {
-				t.Fatalf("integer value %d out of int32 range", v)
+			if v < 0 || int64(v) > 2147483647 {
+				t.Fatalf("integer value %d out of expected non-negative int32 range", v)
 			}
 		default:
 			t.Fatalf("expected int32-compatible type, got %T: %v", val, val)

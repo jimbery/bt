@@ -12,6 +12,9 @@ type Artifact struct {
 	Request      RequestDetail  `json:"request"`
 	Response     ResponseDetail `json:"response"`
 	Failures     []Failure      `json:"failures,omitempty"`
+	// GQLOperationKind and GQLVariables mirror GraphQL HTTP payloads for tooling and replay (property strategy).
+	GQLOperationKind string         `json:"gql_operation_kind,omitempty"`
+	GQLVariables     map[string]any `json:"gql_variables,omitempty"`
 	// Expected is set for table-strategy artifacts when the case had expectations (used by replay for response_matches_schema).
 	Expected    *CaseExpectation `json:"expected,omitempty"`
 	ShrinkTrace []string         `json:"shrink_trace,omitempty"`

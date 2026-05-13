@@ -76,12 +76,15 @@ func baseGenForType(ref *model.SchemaRef) *rapid.Generator[any] {
 		}
 		rs := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ")
 		return rapid.Custom(func(t *rapid.T) any {
-			return rapid.StringOfN(rapid.RuneFrom(rs), 0, 48, 256).Draw(t, "string")
+			return rapid.StringOfN(rapid.RuneFrom(rs), 1, 48, 256).Draw(t, "string")
 		})
 
 	case "integer":
 		return rapid.Custom(func(t *rapid.T) any {
-			return rapid.Int32().Draw(t, "int")
+			// Non-negative draws avoid spurious GraphQL validation failures on typical
+			// domains (amounts, counts) while still exercising large positive values.
+			v := rapid.IntRange(0, 2147483647).Draw(t, "int")
+			return int32(v)
 		})
 
 	case "number":

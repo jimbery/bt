@@ -204,6 +204,16 @@ func (s *propertyStrategy) runOneOperation(ctx context.Context, exec strategy.Ex
 			Response:     final.Response,
 			Failures:     final.Failures,
 		}
+		if gqlcase.IsGraphQLOperation(op) {
+			artifact.GQLOperationKind = string(op.GQLKind)
+			artifact.GQLVariables = map[string]any{}
+			var payload map[string]any
+			if len(final.Request.Body) > 0 && json.Unmarshal(final.Request.Body, &payload) == nil {
+				if v, ok := payload["variables"].(map[string]any); ok && v != nil {
+					artifact.GQLVariables = v
+				}
+			}
+		}
 		path, werr := s.opts.ArtifactWriter.Write(artifact)
 		if werr != nil {
 			_, _ = fmt.Fprintf(os.Stderr, "warning: could not write property artifact: %v\n", werr)
@@ -354,6 +364,19 @@ func requestDetailFromInput(in model.CaseInput) model.RequestDetail {
 		URL:     in.Path,
 		Headers: cloneStringMap(in.Headers),
 		Query:   cloneStringMap(in.Query),
+	}
+	if in.IsGraphQL() {
+		payload := map[string]any{"query": in.GQLQuery}
+		if strings.TrimSpace(in.GQLOperationName) != "" {
+			payload["operationName"] = in.GQLOperationName
+		}
+		if in.GQLVariables != nil {
+			payload["variables"] = in.GQLVariables
+		}
+		if b, err := json.Marshal(payload); err == nil {
+			rd.Body = b
+		}
+		return rd
 	}
 	if in.Body != nil {
 		if b, err := json.Marshal(in.Body); err == nil {

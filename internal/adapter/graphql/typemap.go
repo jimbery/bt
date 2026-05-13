@@ -100,6 +100,35 @@ func definitionToSchemaRef(s *ast.Schema, def *ast.Definition, nullable bool, se
 			Required:   required,
 			Nullable:   nullable,
 		}, nil
+	case ast.InputObject:
+		if def.Name != "" {
+			if _, dup := seen[def.Name]; dup {
+				return &model.SchemaRef{Type: "object", Nullable: nullable}, nil
+			}
+			seen[def.Name] = struct{}{}
+			defer delete(seen, def.Name)
+		}
+		props := make(map[string]*model.SchemaRef)
+		var required []string
+		for _, f := range def.Fields {
+			if f == nil || isDeprecated(f.Directives) {
+				continue
+			}
+			sub, err := buildSchemaRefForGraphQLType(s, f.Type, seen)
+			if err != nil {
+				return nil, err
+			}
+			props[f.Name] = sub
+			if isNonNull(f.Type) {
+				required = append(required, f.Name)
+			}
+		}
+		return &model.SchemaRef{
+			Type:       "object",
+			Properties: props,
+			Required:   required,
+			Nullable:   nullable,
+		}, nil
 	case ast.Union:
 		return &model.SchemaRef{Type: "object", Nullable: nullable}, nil
 	default:
