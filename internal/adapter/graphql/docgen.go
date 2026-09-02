@@ -7,7 +7,7 @@ import (
 
 	"github.com/vektah/gqlparser/v2/ast"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // gqlDocBuilder collects variable declarations while building a minimal operation document.

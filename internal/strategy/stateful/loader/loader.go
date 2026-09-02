@@ -15,8 +15,8 @@ import (
 
 	"go.yaml.in/yaml/v4"
 
-	"github.com/jayimbery/bt/internal/strategy/stateful/binding"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/stateful/binding"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 var placeholderRe = regexp.MustCompile(`\{([a-zA-Z0-9_]+)\}`)

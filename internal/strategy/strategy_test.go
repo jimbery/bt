@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 type fakeStrategy struct {

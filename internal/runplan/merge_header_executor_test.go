@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/runplan"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/runplan"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestNewMergeHeaderExecutor_fillsEmptyAuthorization(t *testing.T) {

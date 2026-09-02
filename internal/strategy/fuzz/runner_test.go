@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/fuzz"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/fuzz"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func discardRunner(artifactDir string) *fuzz.Runner {

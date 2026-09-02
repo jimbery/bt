@@ -3,7 +3,7 @@ package runplan
 import (
 	"strings"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // FilterExcludedCases returns cases whose IDs are not listed in excludeCSV.

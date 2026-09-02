@@ -10,9 +10,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/jayimbery/bt/internal/adapter/openapi"
-	"github.com/jayimbery/bt/internal/mcp/registry"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/adapter/openapi"
+	"github.com/jimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const descScaffoldConfig = `bt_scaffold_config builds a starter backendtest.yaml from an OpenAPI schema and optional strategy list; it returns config_yaml text. After bt_scaffold_config, use bt_validate then bt_run. You may pass output_path so bt_scaffold_config writes the file and cases for you.`

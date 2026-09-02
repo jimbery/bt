@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/cli"
+	"github.com/jimbery/bt/internal/cli"
 )
 
 func TestRunCommand_FuzzFlags_SafetyParsed(t *testing.T) {

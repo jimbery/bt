@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/runner"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/internal/strategy/stateful/binding"
-	"github.com/jayimbery/bt/internal/strategy/table"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/runner"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/strategy/stateful/binding"
+	"github.com/jimbery/bt/internal/strategy/table"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ArtifactWriter persists stateful failure bundles (same contract as replay.Writer).

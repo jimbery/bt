@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/cli"
+	"github.com/jimbery/bt/internal/cli"
 )
 
 func TestRunCommand_TableStrategy_AllPass(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 
 	rapid "pgregory.net/rapid"
 
-	gqlgen "github.com/jayimbery/bt/internal/strategy/graphql/gen"
-	"github.com/jayimbery/bt/pkg/model"
+	gqlgen "github.com/jimbery/bt/internal/strategy/graphql/gen"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func ptr(s model.SchemaRef) *model.SchemaRef {

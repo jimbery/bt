@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	btmcpserver "github.com/jayimbery/bt/internal/mcp"
+	btmcpserver "github.com/jimbery/bt/internal/mcp"
 )
 
 func newMcpCmd() *cobra.Command {

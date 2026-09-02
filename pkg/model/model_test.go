@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestTarget_ZeroValue(t *testing.T) {

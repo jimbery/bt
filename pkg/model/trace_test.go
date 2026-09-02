@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func writeTempProfile(t *testing.T, content any) string {

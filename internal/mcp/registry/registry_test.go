@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/internal/mcp/registry"
 )
 
 func echoHandler(ctx context.Context, input json.RawMessage) (json.RawMessage, error) {

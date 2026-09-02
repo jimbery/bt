@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/runner"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/runner"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestRunner_GetRequest_ReturnsResponse(t *testing.T) {

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/contract"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func schemaRef(t *testing.T, raw string) *model.SchemaRef {

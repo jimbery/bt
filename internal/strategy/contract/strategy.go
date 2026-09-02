@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/gqlcase"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/internal/strategy/property/gen"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/gqlcase"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/strategy/property/gen"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ArtifactWriter persists failure bundles (same contract as replay.Writer).

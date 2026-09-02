@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/trace/har"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/trace/har"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ErrSequenceNormalization indicates Markov transition rows could not be normalised.

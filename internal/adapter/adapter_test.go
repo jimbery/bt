@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/adapter"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/adapter"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // fakeAdapter is a test double that records calls and returns canned values.

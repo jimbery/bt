@@ -11,14 +11,14 @@ import (
 	"strings"
 	"testing"
 
-	graphqladapt "github.com/jayimbery/bt/internal/adapter/graphql"
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/internal/runner"
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/internal/strategy/property"
-	"github.com/jayimbery/bt/internal/testutil"
-	"github.com/jayimbery/bt/pkg/model"
+	graphqladapt "github.com/jimbery/bt/internal/adapter/graphql"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/runner"
+	gqlrunner "github.com/jimbery/bt/internal/runner/graphql"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/strategy/property"
+	"github.com/jimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func discoveredGraphQLOps(t *testing.T) []model.Operation {

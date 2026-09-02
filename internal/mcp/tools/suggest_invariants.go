@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	graphqladapt "github.com/jayimbery/bt/internal/adapter/graphql"
-	"github.com/jayimbery/bt/internal/adapter/openapi"
-	"github.com/jayimbery/bt/internal/ai"
-	"github.com/jayimbery/bt/internal/ai/parse"
-	"github.com/jayimbery/bt/internal/ai/prompt"
-	"github.com/jayimbery/bt/internal/mcp/registry"
-	"github.com/jayimbery/bt/pkg/model"
+	graphqladapt "github.com/jimbery/bt/internal/adapter/graphql"
+	"github.com/jimbery/bt/internal/adapter/openapi"
+	"github.com/jimbery/bt/internal/ai"
+	"github.com/jimbery/bt/internal/ai/parse"
+	"github.com/jimbery/bt/internal/ai/prompt"
+	"github.com/jimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const descSuggestInvariants = `bt_suggest_invariants Given an operation ID from bt_discover_operations, suggest invariant candidates to add to your bt config. Returns structured suggestions with rationale and confidence for human review. Always includes no_5xx and response_matches_schema. Use bt_discover_operations first to get valid operation IDs.`

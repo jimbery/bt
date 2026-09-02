@@ -8,12 +8,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/internal/runner"
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
-	"github.com/jayimbery/bt/internal/strategy/stateful"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/runner"
+	gqlrunner "github.com/jimbery/bt/internal/runner/graphql"
+	"github.com/jimbery/bt/internal/strategy/stateful"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func newReplayCmd() *cobra.Command {

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/cli"
+	"github.com/jimbery/bt/internal/cli"
 )
 
 func TestInitCommand_CreatesConfigFile(t *testing.T) {

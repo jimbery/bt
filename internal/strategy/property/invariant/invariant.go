@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/jayimbery/bt/internal/gqlcase"
-	gqlinvariant "github.com/jayimbery/bt/internal/strategy/graphql/invariant"
-	"github.com/jayimbery/bt/internal/strategy/property/validate"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/gqlcase"
+	gqlinvariant "github.com/jimbery/bt/internal/strategy/graphql/invariant"
+	"github.com/jimbery/bt/internal/strategy/property/validate"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // No5xx fails when the response status is in the 5xx range.

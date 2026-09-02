@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/report"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/report"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 var sampleResults = []model.Result{

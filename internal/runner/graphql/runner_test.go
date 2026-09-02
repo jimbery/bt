@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
-	"github.com/jayimbery/bt/pkg/model"
+	gqlrunner "github.com/jimbery/bt/internal/runner/graphql"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func gqlServer(t *testing.T, status int, responseBody string, capture *map[string]any) *httptest.Server {

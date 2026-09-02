@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/internal/strategy/contract"
 )
 
 func writeBaseline(t *testing.T, dir, content string) string {

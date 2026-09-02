@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // NewMergeHeaderExecutor wraps inner and fills unset headers from defaults (e.g. Authorization from target.auth).

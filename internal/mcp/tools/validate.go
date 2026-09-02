@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/mcp/registry"
 )
 
 const descValidate = `bt_validate checks a backendtest.yaml file and returns valid plus a list of errors. Run bt_validate before bt_run so configuration issues are caught early.`

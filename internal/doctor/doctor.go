@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/internal/strategy/contract"
 )
 
 // Level classifies a doctor check outcome.

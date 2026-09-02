@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/fuzz/classify"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/fuzz/classify"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func opWithStatuses(codes ...int) model.Operation {

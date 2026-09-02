@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/adapter/openapi"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/adapter/openapi"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func writeSpec(t *testing.T, content string) string {

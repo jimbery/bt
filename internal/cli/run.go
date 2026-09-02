@@ -9,12 +9,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/exitcode"
-	"github.com/jayimbery/bt/internal/report"
-	"github.com/jayimbery/bt/internal/runplan"
-	"github.com/jayimbery/bt/internal/strategy/contract"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/exitcode"
+	"github.com/jimbery/bt/internal/report"
+	"github.com/jimbery/bt/internal/runplan"
+	"github.com/jimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func newRunCmd() *cobra.Command {

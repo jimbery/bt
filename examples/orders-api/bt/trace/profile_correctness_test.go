@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	openapiadapt "github.com/jayimbery/bt/internal/adapter/openapi"
-	"github.com/jayimbery/bt/internal/testutil"
-	"github.com/jayimbery/bt/internal/trace/analyze"
-	"github.com/jayimbery/bt/internal/trace/har"
-	"github.com/jayimbery/bt/pkg/model"
+	openapiadapt "github.com/jimbery/bt/internal/adapter/openapi"
+	"github.com/jimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/trace/analyze"
+	"github.com/jimbery/bt/internal/trace/har"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestTraceProfileFromSampleHAR_OperationCountsAndCurrency(t *testing.T) {

@@ -3,10 +3,10 @@ package runplan
 import (
 	"strings"
 
-	btadapter "github.com/jayimbery/bt/internal/adapter"
-	gqladapt "github.com/jayimbery/bt/internal/adapter/graphql"
-	"github.com/jayimbery/bt/internal/adapter/openapi"
-	"github.com/jayimbery/bt/pkg/model"
+	btadapter "github.com/jimbery/bt/internal/adapter"
+	gqladapt "github.com/jimbery/bt/internal/adapter/graphql"
+	"github.com/jimbery/bt/internal/adapter/openapi"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // AdapterForName returns the protocol adapter for the given name (openapi default, graphql).

@@ -345,4 +345,4 @@ The hook runs **`make precommit`**; fix failures before `git commit` succeeds. I
 
 ## Module path
 
-This repository uses **`github.com/jayimbery/bt`**. Replace it with your org’s import path if you fork.
+This repository uses **`github.com/jimbery/bt`**. Replace it with your org’s import path if you fork.

@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/ai"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/ai"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const maxInvariantUserPrompt = 4000

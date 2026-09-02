@@ -4,10 +4,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/runner"
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
-	"github.com/jayimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/runner"
+	gqlrunner "github.com/jimbery/bt/internal/runner/graphql"
+	"github.com/jimbery/bt/internal/strategy"
 )
 
 // requestHTTPTimeout returns the HTTP client timeout for table/contract/property

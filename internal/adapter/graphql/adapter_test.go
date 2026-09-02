@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	gqladapter "github.com/jayimbery/bt/internal/adapter/graphql"
-	"github.com/jayimbery/bt/pkg/model"
+	gqladapter "github.com/jimbery/bt/internal/adapter/graphql"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func writeSDL(t *testing.T, sdl string) string {

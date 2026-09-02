@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/cli"
+	"github.com/jimbery/bt/internal/cli"
 )
 
 func writeMinimalOpenAPISpec(t *testing.T, dir string) string {

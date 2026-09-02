@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ErrNotGraphQL is returned when Run is called with a non-GraphQL CaseInput.

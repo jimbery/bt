@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // JUnitTestSuites is the root XML element.

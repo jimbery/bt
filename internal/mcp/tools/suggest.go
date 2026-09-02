@@ -7,11 +7,11 @@ import (
 	"log"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/ai"
-	"github.com/jayimbery/bt/internal/ai/parse"
-	"github.com/jayimbery/bt/internal/ai/prompt"
-	"github.com/jayimbery/bt/internal/mcp/registry"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/ai"
+	"github.com/jimbery/bt/internal/ai/parse"
+	"github.com/jimbery/bt/internal/ai/prompt"
+	"github.com/jimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const descSuggestStrategy = `bt_suggest_strategy takes operation summaries from bt_discover_operations and returns strategy recommendations (table, property, fuzz, contract, stateful) with rationale for each operation. Optional trace_profile JSON enables stateful when sequence data is present. With an AI API key configured, responses use an AI model; otherwise deterministic rules are used.`

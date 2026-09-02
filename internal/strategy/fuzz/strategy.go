@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/gqlcase"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/internal/strategy/fuzz/classify"
-	"github.com/jayimbery/bt/internal/strategy/fuzz/corpus"
-	"github.com/jayimbery/bt/internal/strategy/fuzz/mutate"
-	"github.com/jayimbery/bt/internal/strategy/fuzz/safety"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/gqlcase"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/strategy/fuzz/classify"
+	"github.com/jimbery/bt/internal/strategy/fuzz/corpus"
+	"github.com/jimbery/bt/internal/strategy/fuzz/mutate"
+	"github.com/jimbery/bt/internal/strategy/fuzz/safety"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ArtifactWriter persists failure bundles (same contract as replay.Writer).

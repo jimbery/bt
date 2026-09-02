@@ -13,8 +13,8 @@ import (
 	"github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 
-	"github.com/jayimbery/bt/internal/adapter"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/adapter"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const defaultGraphQLPath = "/graphql"

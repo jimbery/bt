@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/testutil"
 )
 
 func requireOrdersAPI(t *testing.T) {

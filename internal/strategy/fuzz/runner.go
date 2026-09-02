@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/internal/runner"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/runner"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // Runner is the M5 entry point that executes a [model.TestPlan] against a live base URL.

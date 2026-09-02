@@ -1,8 +1,8 @@
 package tools
 
 import (
-	"github.com/jayimbery/bt/internal/ai"
-	"github.com/jayimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/internal/ai"
+	"github.com/jimbery/bt/internal/mcp/registry"
 )
 
 // All returns every MCP tool definition with no AI provider (rule-based suggest_strategy).

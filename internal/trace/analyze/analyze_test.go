@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/trace/analyze"
-	"github.com/jayimbery/bt/internal/trace/har"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/trace/analyze"
+	"github.com/jimbery/bt/internal/trace/har"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func minimalOps() []model.Operation {

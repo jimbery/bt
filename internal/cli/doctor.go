@@ -8,9 +8,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/doctor"
-	"github.com/jayimbery/bt/internal/exitcode"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/doctor"
+	"github.com/jimbery/bt/internal/exitcode"
 )
 
 func newDoctorCmd() *cobra.Command {

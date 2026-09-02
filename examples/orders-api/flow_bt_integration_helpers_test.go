@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	ordersapi "github.com/jayimbery/bt/examples/orders-api"
-	"github.com/jayimbery/bt/internal/strategy/stateful"
-	"github.com/jayimbery/bt/internal/strategy/stateful/loader"
-	"github.com/jayimbery/bt/internal/testutil"
-	"github.com/jayimbery/bt/pkg/model"
+	ordersapi "github.com/jimbery/bt/examples/orders-api"
+	"github.com/jimbery/bt/internal/strategy/stateful"
+	"github.com/jimbery/bt/internal/strategy/stateful/loader"
+	"github.com/jimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func flowYAML(t *testing.T, name string) string {

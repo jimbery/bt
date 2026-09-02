@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	ordersapi "github.com/jayimbery/bt/examples/orders-api"
+	ordersapi "github.com/jimbery/bt/examples/orders-api"
 )
 
 func createOrder(t *testing.T, srv *httptest.Server, amount int, currency string) string {

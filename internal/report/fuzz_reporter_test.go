@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/report"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/report"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func fuzzFailureResult() model.Result {

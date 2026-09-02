@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/stateful/binding"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/stateful/binding"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func respWith(body string, status int, headers map[string]string) model.StepResponse {

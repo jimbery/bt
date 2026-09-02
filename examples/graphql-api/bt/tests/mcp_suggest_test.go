@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/ai"
-	"github.com/jayimbery/bt/internal/mcp/tools"
-	"github.com/jayimbery/bt/internal/testutil"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/ai"
+	"github.com/jimbery/bt/internal/mcp/tools"
+	"github.com/jimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestMCPSuggestInvariants_GraphQLQuery_ReturnsGQLSuggestionsFirst(t *testing.T) {

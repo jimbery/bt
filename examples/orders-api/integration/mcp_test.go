@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/mcp/testclient"
-	"github.com/jayimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/mcp/testclient"
+	"github.com/jimbery/bt/internal/testutil"
 )
 
 func newMCPClient(t *testing.T) *testclient.Client {

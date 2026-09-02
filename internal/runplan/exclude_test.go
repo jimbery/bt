@@ -3,7 +3,7 @@ package runplan
 import (
 	"testing"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestFilterExcludedCases(t *testing.T) {

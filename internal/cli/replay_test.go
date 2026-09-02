@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/cli"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/cli"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func writeTestArtifact(t *testing.T, dir string, statusCode int) string {

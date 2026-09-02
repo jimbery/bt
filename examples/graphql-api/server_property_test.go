@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	gqlapi "github.com/jayimbery/bt/examples/graphql-api"
+	gqlapi "github.com/jimbery/bt/examples/graphql-api"
 )
 
 func gqlPost(t *testing.T, srv *httptest.Server, query string, variables map[string]any) map[string]any {

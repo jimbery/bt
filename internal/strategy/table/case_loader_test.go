@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/table"
+	"github.com/jimbery/bt/internal/strategy/table"
 )
 
 const caseWithInlineSchema = `

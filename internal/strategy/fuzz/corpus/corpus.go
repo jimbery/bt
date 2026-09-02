@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/strategy/fuzz/mutate"
+	"github.com/jimbery/bt/internal/strategy/fuzz/mutate"
 )
 
 // Corpus stores fuzz seeds under a directory.

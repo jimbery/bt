@@ -12,8 +12,8 @@ import (
 	"github.com/pb33f/libopenapi"
 	v3high "github.com/pb33f/libopenapi/datamodel/high/v3"
 
-	"github.com/jayimbery/bt/internal/adapter"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/adapter"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // DefaultSchemaHTTPTimeout bounds HTTP(S) schema fetch from remote URLs.

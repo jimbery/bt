@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/fuzz/corpus"
-	"github.com/jayimbery/bt/internal/strategy/fuzz/mutate"
+	"github.com/jimbery/bt/internal/strategy/fuzz/corpus"
+	"github.com/jimbery/bt/internal/strategy/fuzz/mutate"
 )
 
 func sampleInput(body string) mutate.Input {

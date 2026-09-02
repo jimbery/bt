@@ -9,10 +9,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/internal/strategy/stateful/gen"
-	"github.com/jayimbery/bt/internal/strategy/stateful/loader"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/strategy/stateful/gen"
+	"github.com/jimbery/bt/internal/strategy/stateful/loader"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const metaFlowJSON = "bt_stateful_flow_json"
