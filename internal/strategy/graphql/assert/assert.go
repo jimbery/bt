@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/strategy/contract"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // AssertionSeverity classifies GraphQL assertion outcomes.

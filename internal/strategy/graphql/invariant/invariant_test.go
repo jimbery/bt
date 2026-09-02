@@ -3,8 +3,8 @@ package invariant_test
 import (
 	"testing"
 
-	gqlinvariant "github.com/jayimbery/bt/internal/strategy/graphql/invariant"
-	"github.com/jayimbery/bt/pkg/model"
+	gqlinvariant "github.com/jimbery/bt/internal/strategy/graphql/invariant"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func respWith(body string) model.ResponseDetail {

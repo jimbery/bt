@@ -17,12 +17,12 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/jayimbery/bt/internal/gqlcase"
-	"github.com/jayimbery/bt/internal/strategy"
-	gqlgen "github.com/jayimbery/bt/internal/strategy/graphql/gen"
-	"github.com/jayimbery/bt/internal/strategy/property/gen"
-	"github.com/jayimbery/bt/internal/strategy/property/invariant"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/gqlcase"
+	"github.com/jimbery/bt/internal/strategy"
+	gqlgen "github.com/jimbery/bt/internal/strategy/graphql/gen"
+	"github.com/jimbery/bt/internal/strategy/property/gen"
+	"github.com/jimbery/bt/internal/strategy/property/invariant"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // rapidRunMu serialises property runs that touch Rapid's global command-line flags

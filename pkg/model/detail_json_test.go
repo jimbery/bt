@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestResponseDetail_JSONRoundTrip_embeddedJSON(t *testing.T) {

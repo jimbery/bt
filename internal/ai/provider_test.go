@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/ai"
+	"github.com/jimbery/bt/internal/ai"
 )
 
 func TestNewProvider_EmptyAPIKey_ReturnsStub(t *testing.T) {

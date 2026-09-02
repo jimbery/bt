@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/mcp/tools"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/mcp/tools"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func mustMarshal(t *testing.T, v any) json.RawMessage {

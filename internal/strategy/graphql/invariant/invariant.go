@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	gqlassert "github.com/jayimbery/bt/internal/strategy/graphql/assert"
-	"github.com/jayimbery/bt/pkg/model"
+	gqlassert "github.com/jimbery/bt/internal/strategy/graphql/assert"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // NoGQLErrorsConfig configures the no_gql_errors invariant.

@@ -13,9 +13,9 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 	mcpserver "github.com/mark3labs/mcp-go/server"
 
-	"github.com/jayimbery/bt/internal/ai"
-	"github.com/jayimbery/bt/internal/mcp/registry"
-	"github.com/jayimbery/bt/internal/mcp/tools"
+	"github.com/jimbery/bt/internal/ai"
+	"github.com/jimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/internal/mcp/tools"
 )
 
 // ServeStdio runs the MCP protocol on stdin/stdout. defaultConfigPath is used when

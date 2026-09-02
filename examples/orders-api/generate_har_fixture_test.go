@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/testutil"
 )
 
 // TestGenerateTraceSampleHAR records scripted traffic against NewRouter() and writes

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func jsonBytesEqual(a, b []byte) bool {

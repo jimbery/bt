@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ErrArtifactNotFound is returned when the artifact file does not exist.

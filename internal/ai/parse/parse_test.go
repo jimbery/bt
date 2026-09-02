@@ -3,7 +3,7 @@ package parse_test
 import (
 	"testing"
 
-	"github.com/jayimbery/bt/internal/ai/parse"
+	"github.com/jimbery/bt/internal/ai/parse"
 )
 
 func TestParseInvariantSuggestions_ValidJSON_ReturnsSuggestions(t *testing.T) {

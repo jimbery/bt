@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/property/validate"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/property/validate"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestValidateResponse_ValidObject(t *testing.T) {

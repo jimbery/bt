@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/config"
 )
 
 func TestLoad_FileNotFound(t *testing.T) {

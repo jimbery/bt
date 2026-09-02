@@ -8,7 +8,7 @@ import (
 
 	"go.yaml.in/yaml/v4"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // Baseline captures known-failing contract operations (quarantine list).

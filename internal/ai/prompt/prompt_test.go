@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/ai/prompt"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/ai/prompt"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func createOrderOp() model.Operation {

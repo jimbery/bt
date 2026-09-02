@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/runner"
-	"github.com/jayimbery/bt/internal/strategy/table"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/runner"
+	"github.com/jimbery/bt/internal/strategy/table"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // TestSchemaViolationAcceptance verifies the deliberately wrong schema case

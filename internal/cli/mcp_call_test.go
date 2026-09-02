@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/cli"
-	"github.com/jayimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/cli"
+	"github.com/jimbery/bt/internal/testutil"
 )
 
 func btBinaryForMCPCall(t *testing.T) string {

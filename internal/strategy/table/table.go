@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/strategy"
-	gqlassert "github.com/jayimbery/bt/internal/strategy/graphql/assert"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy"
+	gqlassert "github.com/jimbery/bt/internal/strategy/graphql/assert"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ArtifactWriter is the interface the table strategy uses to write failure artifacts.

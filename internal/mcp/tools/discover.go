@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/adapter/openapi"
-	"github.com/jayimbery/bt/internal/mcp/registry"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/adapter/openapi"
+	"github.com/jimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const descDiscoverOperations = `bt_discover_operations parses an OpenAPI schema file and returns all discovered operations as a structured list. Use bt_discover_operations before bt_suggest_strategy or bt_scaffold_config.`

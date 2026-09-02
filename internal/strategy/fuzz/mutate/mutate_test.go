@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/fuzz/mutate"
+	"github.com/jimbery/bt/internal/strategy/fuzz/mutate"
 )
 
 // --- Helpers ---

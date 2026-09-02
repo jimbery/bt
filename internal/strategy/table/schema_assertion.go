@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/strategy/property/validate"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/property/validate"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // SchemaAssertion evaluates a JSON response body against a JSON Schema-shaped model.SchemaRef.

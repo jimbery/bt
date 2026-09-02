@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/runner"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/runner"
 )
 
 func TestRequestHTTPTimeout_nilConfig(t *testing.T) {

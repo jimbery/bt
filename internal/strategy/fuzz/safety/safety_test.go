@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jayimbery/bt/internal/strategy/fuzz/safety"
+	"github.com/jimbery/bt/internal/strategy/fuzz/safety"
 )
 
 func TestEnforcer_SafeProfile_AllowsGET(t *testing.T) {

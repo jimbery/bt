@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/mcp/registry"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const descExplainFailure = `bt_explain_failure loads one bt artifact JSON and returns request, response, failures, and a replay_command line. Use bt_explain_failure after bt_run when you need full detail for a single artifact_path.`

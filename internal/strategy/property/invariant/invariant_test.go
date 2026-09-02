@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/strategy/property/invariant"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/property/invariant"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestNo5xx(t *testing.T) {

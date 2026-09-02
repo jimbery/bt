@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 type jsonReporter struct{ w io.Writer }

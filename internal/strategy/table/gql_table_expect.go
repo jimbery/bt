@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func gqlTableExpectationFailures(body []byte, exp *model.CaseExpectation) ([]model.Failure, []model.SchemaViolation) {

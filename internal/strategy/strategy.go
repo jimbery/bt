@@ -3,7 +3,7 @@ package strategy
 import (
 	"context"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // Kind identifies which testing strategy to use.

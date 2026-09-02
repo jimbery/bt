@@ -3,8 +3,8 @@ package cli
 import (
 	"errors"
 
-	"github.com/jayimbery/bt/internal/exitcode"
-	"github.com/jayimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/exitcode"
+	"github.com/jimbery/bt/internal/replay"
 )
 
 // ExitCodeFor maps errors from bt commands to stable process exit codes.

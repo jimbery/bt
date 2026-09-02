@@ -3,7 +3,7 @@ package model_test
 import (
 	"testing"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestRunConfigFromMap_RoundTrip(t *testing.T) {

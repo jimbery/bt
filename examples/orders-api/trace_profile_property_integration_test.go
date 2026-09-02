@@ -11,15 +11,15 @@ import (
 	"sync"
 	"testing"
 
-	openapiadapt "github.com/jayimbery/bt/internal/adapter/openapi"
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/internal/runner"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/internal/strategy/property"
-	"github.com/jayimbery/bt/internal/testutil"
-	"github.com/jayimbery/bt/internal/trace/analyze"
-	"github.com/jayimbery/bt/internal/trace/har"
-	"github.com/jayimbery/bt/pkg/model"
+	openapiadapt "github.com/jimbery/bt/internal/adapter/openapi"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/runner"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/strategy/property"
+	"github.com/jimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/trace/analyze"
+	"github.com/jimbery/bt/internal/trace/har"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 type recordBodies struct {

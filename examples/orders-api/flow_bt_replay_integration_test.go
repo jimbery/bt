@@ -8,11 +8,11 @@ import (
 	"strings"
 	"testing"
 
-	ordersapi "github.com/jayimbery/bt/examples/orders-api"
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/internal/strategy/stateful"
-	"github.com/jayimbery/bt/internal/strategy/stateful/loader"
-	"github.com/jayimbery/bt/pkg/model"
+	ordersapi "github.com/jimbery/bt/examples/orders-api"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/strategy/stateful"
+	"github.com/jimbery/bt/internal/strategy/stateful/loader"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestReplay_UsesSavedBindings_NotFreshServerPath(t *testing.T) {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/vektah/gqlparser/v2/ast"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func unwrapNamedDef(s *ast.Schema, t *ast.Type) *ast.Definition {

@@ -6,8 +6,8 @@ import (
 
 	rapid "pgregory.net/rapid"
 
-	"github.com/jayimbery/bt/internal/strategy/property/gen"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/property/gen"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func stringSchema() *model.SchemaRef {

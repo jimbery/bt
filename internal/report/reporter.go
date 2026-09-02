@@ -1,7 +1,7 @@
 package report
 
 import (
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // Reporter writes test results to an io.Writer in a specific format.

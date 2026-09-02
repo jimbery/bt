@@ -3,7 +3,7 @@ package table
 import (
 	"testing"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestMergeCaseInputHeaders_caseOverridesDefault(t *testing.T) {

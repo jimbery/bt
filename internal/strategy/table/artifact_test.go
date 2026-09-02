@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/internal/strategy/table"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/strategy/table"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestTableStrategy_Execute_WritesArtifactOnFailure(t *testing.T) {

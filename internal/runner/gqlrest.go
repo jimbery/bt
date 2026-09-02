@@ -3,8 +3,8 @@ package runner
 import (
 	"context"
 
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
-	"github.com/jayimbery/bt/pkg/model"
+	gqlrunner "github.com/jimbery/bt/internal/runner/graphql"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // GQLRESTExecutor routes GraphQL case inputs to gql and everything else to rest.

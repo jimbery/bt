@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/mcp/tools"
+	"github.com/jimbery/bt/internal/mcp/tools"
 )
 
 func TestToolDescriptions_AreNonEmpty(t *testing.T) {

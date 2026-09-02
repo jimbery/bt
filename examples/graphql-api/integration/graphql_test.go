@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/testutil"
 )
 
 // GraphQLRunResult mirrors the JSON report output of bt run --output json.

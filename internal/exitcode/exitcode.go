@@ -3,7 +3,7 @@ package exitcode
 import (
 	"errors"
 
-	"github.com/jayimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/internal/strategy/contract"
 )
 
 const (

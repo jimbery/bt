@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/ai"
-	"github.com/jayimbery/bt/internal/mcp/tools"
+	"github.com/jimbery/bt/internal/ai"
+	"github.com/jimbery/bt/internal/mcp/tools"
 )
 
 const stubSuggestionsJSON = `[

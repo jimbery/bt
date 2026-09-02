@@ -9,10 +9,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/internal/strategy/stateful"
-	"github.com/jayimbery/bt/internal/strategy/stateful/loader"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/strategy/stateful"
+	"github.com/jimbery/bt/internal/strategy/stateful/loader"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func twoStepServer(t *testing.T) *httptest.Server {

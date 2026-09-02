@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/mcp/registry"
-	"github.com/jayimbery/bt/internal/runplan"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/mcp/registry"
+	"github.com/jimbery/bt/internal/runplan"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 const descRun = `bt_run executes a configured bt strategy (table, property, fuzz, contract, stateful, or all) and returns passed, failed, and artifact paths. After bt_run reports failures, use bt_explain_failure with the artifact_path for full detail.`

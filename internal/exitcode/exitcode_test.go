@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/exitcode"
-	"github.com/jayimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/internal/exitcode"
+	"github.com/jimbery/bt/internal/strategy/contract"
 )
 
 func TestExitCode_AllPassed_Zero(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/testutil"
 )
 
 type fuzzReport struct {

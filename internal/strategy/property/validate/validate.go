@@ -7,7 +7,7 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // SchemaViolation records a single schema mismatch.

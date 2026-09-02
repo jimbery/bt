@@ -3,7 +3,7 @@ package adapter
 import (
 	"context"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // Adapter is the contract all protocol adapters must implement.

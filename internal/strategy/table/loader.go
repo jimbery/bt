@@ -9,9 +9,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/jayimbery/bt/internal/adapter/openapi"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/adapter/openapi"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ConfigError is returned when a table case file references an invalid OpenAPI fragment.

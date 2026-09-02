@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/testutil"
+	"github.com/jimbery/bt/internal/testutil"
 )
 
 // ContractRunResult mirrors the enriched JSON report from bt run --output json.

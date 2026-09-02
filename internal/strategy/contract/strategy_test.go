@@ -7,10 +7,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/runner"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/internal/strategy/contract"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/runner"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func newContractMux(t *testing.T, handlers map[string]http.HandlerFunc) *httptest.Server {

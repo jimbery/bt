@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jayimbery/bt/internal/runner"
-	gqlrunner "github.com/jayimbery/bt/internal/runner/graphql"
-	"github.com/jayimbery/bt/internal/strategy/table"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/runner"
+	gqlrunner "github.com/jimbery/bt/internal/runner/graphql"
+	"github.com/jimbery/bt/internal/strategy/table"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestGQLSchemaViolationAcceptance(t *testing.T) {

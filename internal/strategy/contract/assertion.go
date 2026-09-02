@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/strategy/property/validate"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/property/validate"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // EvaluateBody checks a decoded JSON object body against a SchemaRef and returns

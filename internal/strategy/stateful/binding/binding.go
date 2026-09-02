@@ -10,7 +10,7 @@ import (
 
 	jsonpath "github.com/PaesslerAG/jsonpath"
 
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 var (

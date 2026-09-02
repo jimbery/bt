@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/strategy/property/validate"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/strategy/property/validate"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // ErrTimeout is a sentinel recognised as a request timeout (tests and callers).

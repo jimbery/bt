@@ -3,8 +3,8 @@ package gqlcase_test
 import (
 	"testing"
 
-	"github.com/jayimbery/bt/internal/gqlcase"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/gqlcase"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 func TestMinimalInput_GraphQLOp(t *testing.T) {

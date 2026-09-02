@@ -3,7 +3,7 @@ package ai_test
 import (
 	"testing"
 
-	"github.com/jayimbery/bt/internal/ai"
+	"github.com/jimbery/bt/internal/ai"
 )
 
 func TestLoadProviderConfig_EnvVarTakesPrecedence(t *testing.T) {

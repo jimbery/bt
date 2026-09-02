@@ -1,4 +1,4 @@
-module github.com/jayimbery/bt
+module github.com/jimbery/bt
 
 go 1.25.5
 

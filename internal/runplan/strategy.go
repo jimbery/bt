@@ -10,15 +10,15 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jayimbery/bt/internal/config"
-	"github.com/jayimbery/bt/internal/replay"
-	"github.com/jayimbery/bt/internal/strategy"
-	"github.com/jayimbery/bt/internal/strategy/contract"
-	"github.com/jayimbery/bt/internal/strategy/fuzz"
-	"github.com/jayimbery/bt/internal/strategy/property"
-	"github.com/jayimbery/bt/internal/strategy/stateful"
-	"github.com/jayimbery/bt/internal/strategy/table"
-	"github.com/jayimbery/bt/pkg/model"
+	"github.com/jimbery/bt/internal/config"
+	"github.com/jimbery/bt/internal/replay"
+	"github.com/jimbery/bt/internal/strategy"
+	"github.com/jimbery/bt/internal/strategy/contract"
+	"github.com/jimbery/bt/internal/strategy/fuzz"
+	"github.com/jimbery/bt/internal/strategy/property"
+	"github.com/jimbery/bt/internal/strategy/stateful"
+	"github.com/jimbery/bt/internal/strategy/table"
+	"github.com/jimbery/bt/pkg/model"
 )
 
 // BuildOptions configures optional flags when constructing a strategy (mirrors CLI flags).
